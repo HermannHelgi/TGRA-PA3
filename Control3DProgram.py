@@ -28,6 +28,7 @@ class GraphicsProgram3D:
 
         self.view_matrix = ViewMatrix()
         self.view_matrix.look(Point(3, 3, 3), Point(2, 3, 2), Vector(0, 1, 0)) 
+        # IF LOOK IS CHANGED, REMEMBER TO SET THE SELF.CURRENT_PITCH WITHIN MATRICES.PY TO MATCH, OTHERWISE PITCH WILL BE WEIRD
 
         self.projection_matrix = ProjectionMatrix()
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 10)

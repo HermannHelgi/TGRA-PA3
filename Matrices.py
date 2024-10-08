@@ -110,6 +110,10 @@ class ViewMatrix:
         self.v = Vector(0, 1, 0)
         self.n = Vector(0, 0, 1)
 
+        self.current_pitch = 0.0
+        self.max_pitch = math.radians(90)
+        self.min_pitch = math.radians(-90)
+
     def slide(self, del_u, del_v, del_n, canFly):
         self.eye.x += self.u.x * del_u + self.v.x * del_v + self.n.x * del_n
         self.eye.z += self.u.z * del_u + self.v.z * del_v + self.n.z * del_n
@@ -133,6 +137,17 @@ class ViewMatrix:
     
     def pitch(self, angle):
         angle = self.degrees_to_radians(angle)
+        new_pitch = self.current_pitch + angle
+
+        if new_pitch > self.max_pitch:
+            angle = self.max_pitch - self.current_pitch
+            self.current_pitch = self.max_pitch
+        elif new_pitch < self.min_pitch:
+            angle = self.min_pitch - self.current_pitch
+            self.current_pitch = self.min_pitch
+        else:
+            self.current_pitch = new_pitch
+
         c = cos(angle)
         s = sin(angle)
 
