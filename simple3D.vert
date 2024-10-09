@@ -1,12 +1,25 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 
+uniform vec4 u_eye_pos;
+uniform vec4 u_global_ambient;
+
+
 uniform mat4 u_model_matrix;
 uniform mat4 u_view_matrix;
 uniform mat4 u_projection_matrix;
 
 varying vec4 v_color;  //Leave the varying variables alone to begin with
-uniform vec4 u_color;
+uniform vec4 u_light_position;
+uniform vec4 u_light_diffuse;
+uniform vec4 u_light_specular;
+uniform vec4 u_light_ambient;
+
+uniform vec4 u_material_specular;
+uniform vec4 u_material_diffuse;
+uniform vec4 u_material_ambient;
+uniform float u_shininess;
+
 
 void main(void)
 {
@@ -16,11 +29,27 @@ void main(void)
 	position = u_model_matrix * position;
 	normal = u_model_matrix * normal;
 
-	float light_factor_1 = max(dot(normalize(normal), normalize(vec4(1, 2, 3, 0))), 0.0);
-	float light_factor_2 = max(dot(normalize(normal), normalize(vec4(-3, -2, -1, 0))), 0.0);
-	v_color = (light_factor_1 + light_factor_2) * u_color; // ### --- Change this vector (pure white) to color variable --- #####
+	//float light_factor_1 = max(dot(normalize(normal), normalize(vec4(1, 2, 3, 0))), 0.0);
+	//float light_factor_2 = max(dot(normalize(normal), normalize(vec4(-3, -2, -1, 0))), 0.0);
+	//v_color = (light_factor_1 + light_factor_2) * u_color; // ### --- Change this vector (pure white) to color variable --- #####
+	
+	vec4 s = u_light_position - position;
+	vec4 v = u_eye_pos - position;
+	vec4 h = s+v;
+	
+	float s_length = length(s);
+	float n_length = length(normal);
+	float h_length = length(h);
+	float lambert = max(0.0,(dot(normal,s)/s_length*n_length));
+	float phong = max(0.0,(dot(normal,h)/h_length*n_length));
 
-	// ### --- Change the projection_view_matrix to separate view and projection matrices --- ### 
+	vec4 ambientColor = u_light_ambient * u_material_ambient;
+	vec4 diffuseColor = u_light_diffuse * u_material_diffuse * lambert;
+	vec4 specularColor = u_light_specular * u_material_specular * pow(phong, u_shininess);
+	vec4 lightCalculatedColor = ambientColor + diffuseColor + specularColor;
+
+	v_color = u_global_ambient * u_material_ambient + lightCalculatedColor;
+ 
 	position = u_projection_matrix * (u_view_matrix * position);
 
 	gl_Position = position;

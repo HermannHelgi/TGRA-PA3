@@ -35,12 +35,13 @@ class GraphicsProgram3D:
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         self.cube = Cube()
+        self.cubes = [Cube(),Cube()]
 
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
         # EDITOR & SPEED VARIABLES # 
-        self.canFly = True
+        self.canFly = False
         self.movementSpeed = 3
 
         self.rotationSpeed = 120
@@ -95,17 +96,45 @@ class GraphicsProgram3D:
 
         glViewport(0, 0, self.screenWidth, self.screenHeight)
 
-        self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
 
-        self.shader.set_solid_color(1.0, 0.0, 1.0)
+        #self.shader.set_light_ambient(15,15,15)
+
+
+        self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
+        self.shader.set_global_ambient(10,255,10)
 
         self.model_matrix.load_identity()
         self.model_matrix.push_matrix()
+        self.shader.set_light_possition(-5.0,1.0,1)
+        self.shader.set_light_diffuse(1,1,255)
+        self.shader.set_light_specular(1,1,1)
+
+        self.shader.set_material_shininess(10)
+        self.shader.set_material_diffuse(1, 1, 255)
+        self.shader.set_material_specular(1,1,255)
+        self.shader.set_material_ambient(1,1,255) #The natural color of the meterial
 
         self.model_matrix.add_scale(2, 2, 2)
-
+        self.model_matrix.add_translation(1,0,-2)
+        self.cubes[0].draw(self.shader)
         self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.cube.draw(self.shader)
+        self.model_matrix.pop_matrix()
+
+
+        self.model_matrix.push_matrix()
+        self.shader.set_light_possition(12,0,-3)
+        self.shader.set_light_diffuse(1,255,1)
+        self.shader.set_light_specular(1,1,1)
+
+        self.shader.set_material_shininess(10)
+        self.shader.set_material_diffuse(1, 1, 1)
+        self.shader.set_material_specular(1,1,1)
+        self.shader.set_material_ambient(1,255,1) #The natural color of the meterial
+
+        self.model_matrix.add_translation(1,0,3)
+
+        self.cubes[1].draw(self.shader)
+        self.shader.set_model_matrix(self.model_matrix.matrix)
         self.model_matrix.pop_matrix()
 
         pygame.display.flip()
@@ -123,11 +152,12 @@ class GraphicsProgram3D:
                     if event.key == K_ESCAPE:
                         print("Escaping!")
                         exiting = True
-                        
+                    #Pitch (Up - Down)
                     if event.key == self.pitchUpKey:
                         self.pitch_up_key_down = True
                     elif event.key == self.pitchDownKey:
                         self.pitch_down_key_down = True
+                    #Movement
                     elif event.key == self.forwardsKey:
                         self.forwards_key_down = True
                     elif event.key == self.leftWalkKey:
@@ -136,16 +166,19 @@ class GraphicsProgram3D:
                         self.backwards_key_down = True
                     elif event.key == self.rightWalkKey:
                         self.right_key_down = True
+                    #Rotation (Left - Right)
                     elif event.key == self.rotateRightKey:
                         self.rotate_right_key_down = True
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = True
 
                 elif event.type == pygame.KEYUP:
+                    #Pitch (Up - Down)
                     if event.key == self.pitchUpKey:
                         self.pitch_up_key_down = False
                     elif event.key == self.pitchDownKey:
                         self.pitch_down_key_down = False
+                    #Movement
                     elif event.key == self.forwardsKey:
                         self.forwards_key_down = False
                     elif event.key == self.leftWalkKey:
@@ -154,6 +187,7 @@ class GraphicsProgram3D:
                         self.backwards_key_down = False
                     elif event.key == self.rightWalkKey:
                         self.right_key_down = False
+                    #Rotation (Left - Right)    
                     elif event.key == self.rotateRightKey:
                         self.rotate_right_key_down = False
                     elif event.key == self.rotateLeftKey:
