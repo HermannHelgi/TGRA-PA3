@@ -34,8 +34,10 @@ class GraphicsProgram3D:
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 10)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
+        self.boxes = []
+        self.cubes = []
+
         self.cube = Cube()
-        self.cubes = [Cube(),Cube()]
 
         self.clock = pygame.time.Clock()
         self.clock.tick()
@@ -68,17 +70,19 @@ class GraphicsProgram3D:
         self.backwards_key_down = False
         self.right_key_down = False
 
+        self.invisible_box_padding = 0.7
+
     def update(self):
         delta_time = self.clock.tick() / 1000.0
 
         if (self.forwards_key_down):
-            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly)
+            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
         if (self.backwards_key_down):
-            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly)
+            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes)
         if (self.left_key_down):
-            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly)
+            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
         if (self.right_key_down):
-            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly)
+            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
         if (self.rotate_right_key_down):
             self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
         if (self.rotate_left_key_down):
@@ -101,48 +105,43 @@ class GraphicsProgram3D:
 
 
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
-        self.shader.set_global_ambient(10,255,10)
+        self.shader.set_global_ambient(10,10,10)
 
-        self.model_matrix.load_identity()
-        self.model_matrix.push_matrix()
-        self.shader.set_light_possition(-5.0,1.0,1)
-        self.shader.set_light_diffuse(1,1,255)
-        self.shader.set_light_specular(1,1,1)
+        self.shader.set_light_possition(0,4,0)
+        self.shader.set_light_diffuse(255,255,255)
+        self.shader.set_light_specular(1,255,255)
+        self.shader.set_light_ambient(255,255,255)
 
-        self.shader.set_material_shininess(10)
-        self.shader.set_material_diffuse(1, 1, 255)
-        self.shader.set_material_specular(1,1,255)
-        self.shader.set_material_ambient(1,1,255) #The natural color of the meterial
+        self.shader.set_material_diffuse(255, 255, 255)
+        self.shader.set_material_specular(255,255,255)
+        self.shader.set_material_ambient(255,255,255) #The natural color of the meterial
 
-        self.model_matrix.add_scale(2, 2, 2)
-        self.model_matrix.add_translation(1,0,-2)
-        self.cubes[0].draw(self.shader)
+        self.DrawCubes()
+
         self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
 
+        # self.model_matrix.push_matrix()
+        # self.shader.set_light_possition(12,0,-3)
+        # self.shader.set_light_diffuse(1,255,1)
+        # self.shader.set_light_specular(1,1,1)
 
-        self.model_matrix.push_matrix()
-        self.shader.set_light_possition(12,0,-3)
-        self.shader.set_light_diffuse(1,255,1)
-        self.shader.set_light_specular(1,1,1)
+        # self.shader.set_material_shininess(10)
+        # self.shader.set_material_diffuse(1, 1, 1)
+        # self.shader.set_material_specular(1,1,1)
+        # self.shader.set_material_ambient(1,255,1) #The natural color of the meterial
 
-        self.shader.set_material_shininess(10)
-        self.shader.set_material_diffuse(1, 1, 1)
-        self.shader.set_material_specular(1,1,1)
-        self.shader.set_material_ambient(1,255,1) #The natural color of the meterial
+        # self.model_matrix.add_translation(1,0,3)
 
-        self.model_matrix.add_translation(1,0,3)
-
-        self.cubes[1].draw(self.shader)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
+        # self.cubes[1].draw(self.shader)
+        # self.shader.set_model_matrix(self.model_matrix.matrix)
+        # self.model_matrix.pop_matrix()
 
         pygame.display.flip()
 
     def program_loop(self):
         exiting = False
-        while not exiting:
 
+        while not exiting:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     print("Quitting.")
@@ -192,13 +191,24 @@ class GraphicsProgram3D:
                         self.rotate_right_key_down = False
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = False
-                        
             
             self.update()
             self.display()
 
         #OUT OF GAME LOOP
         pygame.quit()
+
+    def MakeCube(self, translation_x=0, translation_y=0, translation_z=0, scale_x=1, scale_y=1, scale_z=1):
+        self.model_matrix.load_identity()
+        self.model_matrix.add_translation(translation_x, translation_y, translation_z)
+        self.model_matrix.add_scale(scale_x, scale_y, scale_z)
+        self.cubes.append(Cube())
+        self.boxes.append([translation_x - 0.5 * scale_x - self.invisible_box_padding, translation_x + 0.5 * scale_x + self.invisible_box_padding, translation_z - 0.5 * scale_z - self.invisible_box_padding, self.invisible_box_padding + translation_z + 0.5 * scale_z])
+
+    def DrawCubes(self):
+        for cube in self.cubes:
+            cube.draw(self.shader)
+
 
     def start(self):
         self.program_loop()
