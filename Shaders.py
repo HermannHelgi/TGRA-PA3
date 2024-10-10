@@ -46,6 +46,7 @@ class Shader3D:
         self.lightSpecLoc = glGetUniformLocation(self.renderingProgramID,"u_light_specular")
         self.lightAmbLoc = glGetUniformLocation(self.renderingProgramID,"u_light_ambient")
 
+
         #Material variables
         self.matDifLoc = glGetUniformLocation(self.renderingProgramID,"u_material_diffuse")
         self.matSpecLoc = glGetUniformLocation(self.renderingProgramID,"u_material_specular")
@@ -67,9 +68,9 @@ class Shader3D:
     def set_material_diffuse(self, r, g, b):
         glUniform4f(self.matDifLoc,r,g,b,1.0)
     def set_material_specular(self, r, g, b):
-        glUniform4f(self.matDifLoc,r,g,b,1.0)
+        glUniform4f(self.matSpecLoc,r,g,b,1.0)
     def set_material_ambient(self, r, g, b):
-        glUniform4f(self.matDifLoc,r,g,b,1.0)
+        glUniform4f(self.matAmbLoc,r,g,b,1.0)
     def set_material_shininess(self, x):
         glUniform1f(self.matShineLoc,x)
 
@@ -82,6 +83,8 @@ class Shader3D:
         glUniform4f(self.lightSpecLoc,r,g,b,1.0)
     def set_light_ambient(self,r,g,b):
         glUniform4f(self.lightAmbLoc,r,g,b,1.0)
+
+
 
 
     def use(self):
