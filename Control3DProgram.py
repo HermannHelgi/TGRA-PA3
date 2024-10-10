@@ -68,6 +68,8 @@ class GraphicsProgram3D:
         self.backwards_key_down = False
         self.right_key_down = False
 
+        self.zoob = 1
+
     def update(self):
         delta_time = self.clock.tick() / 1000.0
 
@@ -88,6 +90,8 @@ class GraphicsProgram3D:
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
 
+        self.zoob += 0.2 * delta_time
+
     def display(self):
         glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
 
@@ -97,45 +101,54 @@ class GraphicsProgram3D:
         glViewport(0, 0, self.screenWidth, self.screenHeight)
 
 
-        #self.shader.set_light_ambient(15,15,15)
+
+        #Effecting meterial stuff effects the other...
+        #Try testing using values from 0 - 1. easy to see results that way..
 
 
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
-        self.shader.set_global_ambient(10,255,10)
+        
+        #self.shader.set_global_ambient(0,0.3,10)
 
         self.model_matrix.load_identity()
-        self.model_matrix.push_matrix()
-        self.shader.set_light_possition(-5.0,1.0,1)
-        self.shader.set_light_diffuse(1,1,255)
-        self.shader.set_light_specular(1,1,1)
-
-        self.shader.set_material_shininess(10)
-        self.shader.set_material_diffuse(1, 1, 255)
-        self.shader.set_material_specular(1,1,255)
-        self.shader.set_material_ambient(1,1,255) #The natural color of the meterial
-
-        self.model_matrix.add_scale(2, 2, 2)
-        self.model_matrix.add_translation(1,0,-2)
-        self.cubes[0].draw(self.shader)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
-
 
         self.model_matrix.push_matrix()
-        self.shader.set_light_possition(12,0,-3)
-        self.shader.set_light_diffuse(1,255,1)
-        self.shader.set_light_specular(1,1,1)
+        self.shader.set_light_possition(0,4,0)
+        self.shader.set_light_diffuse(255,255,255)
+        self.shader.set_light_specular(1,255,255)
+        self.shader.set_light_ambient(255,255,255)
 
-        self.shader.set_material_shininess(10)
-        self.shader.set_material_diffuse(1, 1, 1)
-        self.shader.set_material_specular(1,1,1)
-        self.shader.set_material_ambient(1,255,1) #The natural color of the meterial
+        #self.shader.set_material_shininess(15)
+        self.shader.set_material_diffuse(255, 255, 255)
+        self.shader.set_material_specular(255,255,255)
+        self.shader.set_material_ambient(255,255,255) #The natural color of the meterial
 
-        self.model_matrix.add_translation(1,0,3)
+        self.model_matrix.add_translation(-3+self.zoob,1.5,-2)
+        self.model_matrix.add_scale(2,2,2)
 
         self.cubes[1].draw(self.shader)
         self.shader.set_model_matrix(self.model_matrix.matrix)
         self.model_matrix.pop_matrix()
+        
+        self.model_matrix.push_matrix()
+        self.model_matrix.add_translation(-2.2+self.zoob,1.5,4)
+        self.model_matrix.add_scale(2,2,2)
+        self.cubes[0].draw(self.shader)
+        self.shader.set_model_matrix(self.model_matrix.matrix)
+        self.model_matrix.pop_matrix()
+
+        #For some reason editing editing the variables for the second model matrix effects the first one...??
+        """
+        self.shader.set_light1_diffuse(1,0,1)
+        self.shader.set_light1_possition(0,2,7)
+        self.model_matrix.push_matrix()
+        self.shader.set_material_diffuse(0,1,1)
+        self.model_matrix.add_translation(-2.2+self.zoob,1.5,4)
+        self.model_matrix.add_scale(2,2,2)
+        self.cubes[0].draw(self.shader)
+        self.shader.set_model_matrix(self.model_matrix.matrix)
+        self.model_matrix.pop_matrix()
+        """
 
         pygame.display.flip()
 
