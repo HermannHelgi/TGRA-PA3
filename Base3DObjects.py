@@ -101,6 +101,25 @@ class Cube:
                             1.0, 0.0, 0.0,
                             1.0, 0.0, 0.0,
                             1.0, 0.0, 0.0]
+        
+        self.trans_x = 0
+        self.trans_y = 0
+        self.trans_z = 0
+
+        self.scale_x = 0
+        self.scale_y = 0
+        self.scale_z = 0
+        
+        self.specular_r = 0
+        self.specular_g = 0
+        self.specular_b = 0
+        self.diffuse_r = 0
+        self.diffuse_g = 0
+        self.diffuse_b = 0
+        self.ambient_r = 0
+        self.ambient_g = 0
+        self.ambient_b = 0
+        self.shine = 0
 
     def draw(self, shader):
         

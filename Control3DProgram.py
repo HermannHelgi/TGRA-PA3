@@ -94,7 +94,8 @@ class GraphicsProgram3D:
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
 
-        self.zoob += 0.2 * delta_time
+
+
 
     def display(self):
         glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
@@ -113,33 +114,8 @@ class GraphicsProgram3D:
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
         
         #self.shader.set_global_ambient(0,0.3,10)
-
         self.model_matrix.load_identity()
-
-        self.model_matrix.push_matrix()
-        self.shader.set_light_possition(0,4,0)
-        self.shader.set_light_diffuse(255,255,255)
-        self.shader.set_light_specular(1,255,255)
-        self.shader.set_light_ambient(255,255,255)
-
-        #self.shader.set_material_shininess(15)
-        self.shader.set_material_diffuse(255, 255, 255)
-        self.shader.set_material_specular(255,255,255)
-        self.shader.set_material_ambient(255,255,255) #The natural color of the meterial
-
-        self.model_matrix.add_translation(-3+self.zoob,1.5,-2)
-        self.model_matrix.add_scale(2,2,2)
-
-        self.cubes[1].draw(self.shader)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
-        
-        self.model_matrix.push_matrix()
-        self.model_matrix.add_translation(-2.2+self.zoob,1.5,4)
-        self.model_matrix.add_scale(2,2,2)
-        self.cubes[0].draw(self.shader)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
+        self.DrawCubes()
 
         #For some reason editing editing the variables for the second model matrix effects the first one...??
         """
@@ -216,19 +192,113 @@ class GraphicsProgram3D:
         #OUT OF GAME LOOP
         pygame.quit()
 
-    def MakeCube(self, translation_x=0, translation_y=0, translation_z=0, scale_x=1, scale_y=1, scale_z=1):
-        self.model_matrix.load_identity()
-        self.model_matrix.add_translation(translation_x, translation_y, translation_z)
-        self.model_matrix.add_scale(scale_x, scale_y, scale_z)
-        self.cubes.append(Cube())
+    def MakeCube(self,
+                  translation_x=0, 
+                  translation_y=0, 
+                  translation_z=0,
+                  
+                  scale_x=1, 
+                  scale_y=1, 
+                  scale_z=1, 
+                  
+                  diffuse_r = 0, 
+                  diffuse_g = 0, 
+                  diffuse_b = 0,
+                  specular_r = 0,
+                  specular_g = 0,
+                  specular_b = 0,
+                  ambient_r = 0,
+                  ambient_g = 0,
+                  ambient_b = 0,
+                  shine = 0
+                  
+                  ):
+        new_cube = Cube()
+        new_cube.trans_x = translation_x
+        new_cube.trans_y = translation_y
+        new_cube.trans_z = translation_z
+        new_cube.scale_x = scale_x
+        new_cube.scale_y = scale_y
+        new_cube.scale_z = scale_z
+        new_cube.diffuse_r = diffuse_r
+        new_cube.diffuse_g = diffuse_g
+        new_cube.diffuse_b = diffuse_b
+        new_cube.specular_r = specular_r
+        new_cube.specular_g = specular_g
+        new_cube.specular_b = specular_b
+        new_cube.ambient_r = ambient_r
+        new_cube.ambient_g = ambient_g
+        new_cube.ambient_b = ambient_b
+        new_cube.shine = shine
+
+
+        self.cubes.append(new_cube)
         self.boxes.append([translation_x - 0.5 * scale_x - self.invisible_box_padding, translation_x + 0.5 * scale_x + self.invisible_box_padding, translation_z - 0.5 * scale_z - self.invisible_box_padding, self.invisible_box_padding + translation_z + 0.5 * scale_z])
 
     def DrawCubes(self):
         for cube in self.cubes:
+            self.model_matrix.push_matrix()
+
+
+            self.model_matrix.add_translation(cube.trans_x,cube.trans_y,cube.trans_z)
+            self.model_matrix.add_scale(cube.scale_x,cube.scale_y,cube.scale_z)
             cube.draw(self.shader)
+
+            self.shader.set_light_possition(0,4243,154)
+            self.shader.set_light_diffuse(1,0,255)
+            self.shader.set_light_specular(255,255,255)
+            self.shader.set_light_ambient(13,0.3,255)
+
+            self.shader.set_material_shininess(cube.shine)
+            self.shader.set_material_diffuse(cube.diffuse_r,cube.diffuse_g, cube.diffuse_b)
+            self.shader.set_material_specular(cube.specular_r,cube.specular_g,cube.specular_b)
+            self.shader.set_material_ambient(cube.ambient_r,cube.ambient_g,cube.ambient_b) #The natural color of the meterial
+            
+            self.shader.set_model_matrix(self.model_matrix.matrix)
+            self.model_matrix.pop_matrix()
+
 
 
     def start(self):
+        #MakeCube (Translation, scale, diffuse, specular, ambiance, shine)
+        
+        self.MakeCube(2,2,2, 1,1.5,1, 0,0.3,1, 0.0013,0,0, 0.001,0,0, 10)
+        self.MakeCube(6,2,2, 6,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(-6,2,2, 1,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(-2,2,2, 1,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(6.4,2,-2, 6,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(2,2,-6, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(-6,2,-6, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+
+
+        #Pyramid
+        #Top
+        self.MakeCube(12,6,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        #Next top
+        self.MakeCube(11,4,11, 1,1.5,1, 1,0.3,0.05, 0.009,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(13,4,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(11,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(13,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+
+        #Middle layer
+        self.MakeCube(12,2,10, 1,1.5,1, 23,0,0, 0,0,0, 0,0.05,0, 10)
+        self.MakeCube(14,2,10, 1,1.5,1, 0.5,0,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(14,2,12, 1,1.5,1, 0.9,0.3,0, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(10,2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(12,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(10,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(10,2,10, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(12,2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(14,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        #Next bottom
+        self.MakeCube(11,0,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(13,0,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(11,0,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(13,0,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+        #Bottom
+        self.MakeCube(12,-2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
+
+
         self.program_loop()
 
 if __name__ == "__main__":

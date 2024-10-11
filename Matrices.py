@@ -126,7 +126,6 @@ class ViewMatrix:
                         self.eye.x = clamp_x
                     if hit_z >= 0:
                         self.eye.z = clamp_z
-                    break
 
         if (canFly):
             self.eye.y += self.u.y * del_u + self.v.y * del_v + self.norm_vector.y * del_n
