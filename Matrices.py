@@ -130,6 +130,10 @@ class ViewMatrix:
         if (canFly):
             self.eye.y += self.u.y * del_u + self.v.y * del_v + self.norm_vector.y * del_n
 
+    def copy_coords(self, another_view_matrix : 'ViewMatrix'):
+        self.eye.x = another_view_matrix.eye.x
+        self.eye.z = another_view_matrix.eye.z
+
     def check_hit_and_clamp(self, old_pos, new_pos, min_bound, max_bound):
         EPSILON = 0.0001
         hit = -1

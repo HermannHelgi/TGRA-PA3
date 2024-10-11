@@ -17,6 +17,8 @@ class GraphicsProgram3D:
         # WINDOW VARIABLES AND INITIALIZATION #
         self.screenWidth = 800
         self.screenHeight = 600
+        self.mini_map_screenWidth = 200
+        self.mini_map_screenHeight = 150
 
         pygame.init() 
         pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.OPENGL|pygame.DOUBLEBUF)
@@ -28,10 +30,15 @@ class GraphicsProgram3D:
 
         self.view_matrix = ViewMatrix()
         self.view_matrix.look(Point(3, 3, 3), Point(2, 3, 2), Vector(0, 1, 0)) 
+
+        self.mini_map_view = ViewMatrix()
+        self.mini_map_view.look(Point(3, 10, 3), Point(2.999, 1, 2.999), Vector(0, 1, 0)) 
+        self.mini_map_view.rotate_on_floor(-45)
+
         # IF LOOK IS CHANGED, REMEMBER TO SET THE SELF.CURRENT_PITCH WITHIN MATRICES.PY TO MATCH, OTHERWISE PITCH WILL BE WEIRD
 
         self.projection_matrix = ProjectionMatrix()
-        self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 10)
+        self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 40)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         self.boxes = []
@@ -79,12 +86,16 @@ class GraphicsProgram3D:
 
         if (self.forwards_key_down):
             self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
+            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.backwards_key_down):
             self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes)
+            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.left_key_down):
             self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.right_key_down):
             self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.rotate_right_key_down):
             self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
         if (self.rotate_left_key_down):
@@ -94,41 +105,25 @@ class GraphicsProgram3D:
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
 
-
-
-
     def display(self):
         glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
 
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)  ### --- YOU CAN ALSO CLEAR ONLY THE COLOR OR ONLY THE DEPTH --- ###
 
+        # MAIN VIEW
         glViewport(0, 0, self.screenWidth, self.screenHeight)
-
-
-
-        #Effecting meterial stuff effects the other...
-        #Try testing using values from 0 - 1. easy to see results that way..
-
-
-        self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important
-        
-        #self.shader.set_global_ambient(0,0.3,10)
+        self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
         self.model_matrix.load_identity()
         self.DrawCubes()
 
-        #For some reason editing editing the variables for the second model matrix effects the first one...??
-        """
-        self.shader.set_light1_diffuse(1,0,1)
-        self.shader.set_light1_possition(0,2,7)
-        self.model_matrix.push_matrix()
-        self.shader.set_material_diffuse(0,1,1)
-        self.model_matrix.add_translation(-2.2+self.zoob,1.5,4)
-        self.model_matrix.add_scale(2,2,2)
-        self.cubes[0].draw(self.shader)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.model_matrix.pop_matrix()
-        """
+        # Needs a dark grey background behind the Mini map
+
+        # MINI MAP
+        glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
+        self.shader.set_view_matrix(self.mini_map_view.get_matrix()) # New View Matrix each frame, important
+        self.model_matrix.load_identity()
+        self.DrawCubes()
 
         pygame.display.flip()
 
@@ -256,7 +251,6 @@ class GraphicsProgram3D:
             
             self.shader.set_model_matrix(self.model_matrix.matrix)
             self.model_matrix.pop_matrix()
-
 
 
     def start(self):
