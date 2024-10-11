@@ -45,6 +45,8 @@ class GraphicsProgram3D:
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
         self.movementSpeed = 3
+        self.walkingSpeed = self.movementSpeed
+        self.sprintspeed = 6
 
         self.rotationSpeed = 120
         self.pitchSpeed = 60
@@ -59,6 +61,7 @@ class GraphicsProgram3D:
         self.backwardsKey = K_s
         self.leftWalkKey = K_a
         self.rightWalkKey = K_d
+        self.sprintKey = K_LSHIFT
 
         self.pitch_up_key_down = False  
         self.pitch_down_key_down = False  
@@ -164,6 +167,8 @@ class GraphicsProgram3D:
                         self.rotate_right_key_down = True
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = True
+                    elif event.key == self.sprintKey:
+                        self.movementSpeed = self.sprintspeed
 
                 elif event.type == pygame.KEYUP:
                     #Pitch (Up - Down)
@@ -185,6 +190,9 @@ class GraphicsProgram3D:
                         self.rotate_right_key_down = False
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = False
+                    elif event.key == self.sprintKey:
+                        self.movementSpeed = self.walkingSpeed
+                    
             
             self.update()
             self.display()
@@ -261,17 +269,33 @@ class GraphicsProgram3D:
 
     def start(self):
         #MakeCube (Translation, scale, diffuse, specular, ambiance, shine)
-        
-        self.MakeCube(2,2,2, 1,1.5,1, 0,0.3,1, 0.0013,0,0, 0.001,0,0, 10)
-        self.MakeCube(6,2,2, 6,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(-6,2,2, 1,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(-2,2,2, 1,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(6.4,2,-2, 6,1.5,2, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(2,2,-6, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(-6,2,-6, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
 
 
-        #Pyramid
+        #Maze
+        self.MakeCube(-5,2,-1, 12,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(4,2,-3, 1,1.5,5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(9.5,2,-1, 10,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(2,2,-5, 4,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-4,2,-8, 2,1.5,15, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-3,2,-10, 5,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(3,2,-10, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-10,2,-15.5, 1,1.5,30, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-2,2,-19, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(1.5,2,-17, 2,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-6,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(4,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(2.5,2,-30, 24,1.5,1.5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(7,2,-20, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(11,2,-22, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(9,2,-22, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(13,2,-26, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(14,2,-11, 1,1.5,20, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(7,2,-12, 1,1.5,16, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(10,2,-13, 1,1.5,18, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+
+
+        #Pyramid / Diamond
         #Top
         self.MakeCube(12,6,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
         #Next top
