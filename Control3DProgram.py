@@ -44,8 +44,7 @@ class GraphicsProgram3D:
         self.boxes = []
         self.cubes = []
 
-        self.cube = Cube()
-
+        self.minimap_indicator = Cube()
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
@@ -124,6 +123,7 @@ class GraphicsProgram3D:
         glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
         glEnable(GL_SCISSOR_TEST)
 
+        self.DrawPlayerIndicator()
         glScissor(self.screenWidth - self.mini_map_screenWidth,self.screenHeight - self.mini_map_screenHeight,self.mini_map_screenWidth,self.mini_map_screenHeight)
         glClearColor(0.5, 0.5, 0.5, 1.0)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -265,6 +265,28 @@ class GraphicsProgram3D:
             self.shader.set_model_matrix(self.model_matrix.matrix)
             self.model_matrix.pop_matrix()
 
+    def DrawPlayerIndicator(self):
+        self.model_matrix.push_matrix()
+        
+        self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
+        scale = 0.7
+        self.model_matrix.add_scale(scale, scale, scale)
+
+        self.minimap_indicator.draw(self.shader)
+
+        self.shader.set_light_possition(self.view_matrix.eye.x, self.view_matrix.eye.y + 20, self.view_matrix.eye.z)
+        self.shader.set_light_diffuse(1,0,255)
+        self.shader.set_light_specular(255,255,255)
+        self.shader.set_light_ambient(13,0.3,255)
+
+        self.shader.set_material_shininess(10)
+        self.shader.set_material_diffuse(1, 0 ,0)
+        self.shader.set_material_specular(1, 0 ,0)
+        self.shader.set_material_ambient(1, 0 ,0) #The natural color of the meterial
+        
+        self.shader.set_model_matrix(self.model_matrix.matrix)
+        self.model_matrix.pop_matrix()
+        
 
     def start(self):
         #MakeCube (Translation, scale, diffuse, specular, ambiance, shine)
