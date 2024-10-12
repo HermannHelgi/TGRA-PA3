@@ -111,22 +111,27 @@ class GraphicsProgram3D:
     def display(self):
         glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
 
+        glViewport(0, 0, self.screenWidth, self.screenHeight)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)  ### --- YOU CAN ALSO CLEAR ONLY THE COLOR OR ONLY THE DEPTH --- ###
 
         # MAIN VIEW
-        glViewport(0, 0, self.screenWidth, self.screenHeight)
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
         self.model_matrix.load_identity()
         self.DrawCubes()
 
-        # Needs a dark grey background behind the Mini map
-
         # MINI MAP
         glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
+        glEnable(GL_SCISSOR_TEST)
+
+        glScissor(self.screenWidth - self.mini_map_screenWidth,self.screenHeight - self.mini_map_screenHeight,self.mini_map_screenWidth,self.mini_map_screenHeight)
+        glClearColor(0.5, 0.5, 0.5, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         self.shader.set_view_matrix(self.mini_map_view.get_matrix()) # New View Matrix each frame, important
         self.model_matrix.load_identity()
         self.DrawCubes()
+
+        glDisable(GL_SCISSOR_TEST)
 
         pygame.display.flip()
 
