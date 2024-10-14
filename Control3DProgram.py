@@ -312,7 +312,7 @@ class GraphicsProgram3D:
             self.shader.set_light_possition(0,10,0)
             self.shader.set_light_diffuse(1,1,1)
             self.shader.set_light_specular(1,1,1)
-            self.shader.set_light_ambient(13,0.3,255)
+            self.shader.set_light_ambient(1,1,1)
 
             self.shader.set_material_shininess(sphere.shine)
             self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
@@ -335,7 +335,7 @@ class GraphicsProgram3D:
             self.shader.set_light_possition(0,10,0)
             self.shader.set_light_diffuse(1,1,1)
             self.shader.set_light_specular(1,1,1)
-            self.shader.set_light_ambient(13,0.3,255)
+            self.shader.set_light_ambient(1,1,1)
 
             self.shader.set_material_shininess(cube.shine)
             self.shader.set_material_diffuse(cube.diffuse_r,cube.diffuse_g, cube.diffuse_b)
@@ -376,8 +376,10 @@ class GraphicsProgram3D:
     def start(self):
         #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
 
-        self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 5)
-        self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,0,0.5, 0,0.5,0, 13)
+        self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
+        self.MakeSphere(-30,30,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
+
+        self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,24,0.5, 0,0.5,0, 13)
 
         
         #Maze

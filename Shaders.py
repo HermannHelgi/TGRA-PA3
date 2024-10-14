@@ -55,7 +55,6 @@ class Shader3D:
         self.matAmbLoc = glGetUniformLocation(self.renderingProgramID,"u_material_ambient")
         self.matShineLoc = glGetUniformLocation(self.renderingProgramID,"u_shininess")
 
-        self.globalAmbLoc = glGetUniformLocation(self.renderingProgramID,"u_global_ambient")
         self.eyePosLoc = glGetUniformLocation(self.renderingProgramID,"u_eye_pos")
 
         self.modelMatrixLoc = glGetUniformLocation(self.renderingProgramID, "u_model_matrix")
