@@ -43,8 +43,9 @@ class GraphicsProgram3D:
 
         self.boxes = []
         self.cubes = []
+        self.spheres = []
 
-        self.minimap_indicator = Cube()
+        self.minimap_indicator = Sphere()
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
@@ -116,20 +117,28 @@ class GraphicsProgram3D:
 
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
+        
         self.model_matrix.load_identity()
+        
         self.DrawCubes()
+        self.DrawSpheres()
+
+
 
         # MINI MAP
         glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
         glEnable(GL_SCISSOR_TEST)
 
-        self.DrawPlayerIndicator()
         glScissor(self.screenWidth - self.mini_map_screenWidth,self.screenHeight - self.mini_map_screenHeight,self.mini_map_screenWidth,self.mini_map_screenHeight)
         glClearColor(0.5, 0.5, 0.5, 1.0)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         self.shader.set_view_matrix(self.mini_map_view.get_matrix()) # New View Matrix each frame, important
         self.model_matrix.load_identity()
+        self.DrawPlayerIndicator()
+        self.DrawSpheres()
+
         self.DrawCubes()
+
 
         glDisable(GL_SCISSOR_TEST)
 
@@ -243,18 +252,77 @@ class GraphicsProgram3D:
         self.cubes.append(new_cube)
         self.boxes.append([translation_x - 0.5 * scale_x - self.invisible_box_padding, translation_x + 0.5 * scale_x + self.invisible_box_padding, translation_z - 0.5 * scale_z - self.invisible_box_padding, self.invisible_box_padding + translation_z + 0.5 * scale_z])
 
+
+    def MakeSphere(self,
+                  translation_x=0, 
+                  translation_y=0, 
+                  translation_z=0,
+                  
+                  scale_x=1, 
+                  scale_y=1, 
+                  scale_z=1, 
+                  
+                  diffuse_r = 0, 
+                  diffuse_g = 0, 
+                  diffuse_b = 0,
+                  specular_r = 0,
+                  specular_g = 0,
+                  specular_b = 0,
+                  ambient_r = 0,
+                  ambient_g = 0,
+                  ambient_b = 0,
+                  shine = 0
+                  
+                  ):
+        new_sphere = Sphere()
+        new_sphere.trans_x = translation_x
+        new_sphere.trans_y = translation_y
+        new_sphere.trans_z = translation_z
+        new_sphere.scale_x = scale_x
+        new_sphere.scale_y = scale_y
+        new_sphere.scale_z = scale_z
+        new_sphere.diffuse_r = diffuse_r
+        new_sphere.diffuse_g = diffuse_g
+        new_sphere.diffuse_b = diffuse_b
+        new_sphere.specular_r = specular_r
+        new_sphere.specular_g = specular_g
+        new_sphere.specular_b = specular_b
+        new_sphere.ambient_r = ambient_r
+        new_sphere.ambient_g = ambient_g
+        new_sphere.ambient_b = ambient_b
+        new_sphere.shine = shine
+        self.spheres.append(new_sphere)
+
+
+
+    def DrawSpheres(self):
+        for sphere in self.spheres:
+            self.shader.set_light_possition(0,10,0)
+            self.shader.set_light_diffuse(1,1,1)
+            self.shader.set_light_specular(1,1,1)
+            self.shader.set_light_ambient(13,0.3,255)
+
+            self.shader.set_material_shininess(sphere.shine)
+            self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
+            self.shader.set_material_specular(sphere.specular_r,sphere.specular_g,sphere.specular_b)
+            self.shader.set_material_ambient(sphere.ambient_r,sphere.ambient_g,sphere.ambient_b) #The natural color of the meterial
+            
+            self.model_matrix.push_matrix()
+            self.model_matrix.add_translation(sphere.trans_x,sphere.trans_y,sphere.trans_z)
+            self.model_matrix.add_scale(sphere.scale_x,sphere.scale_y,sphere.scale_z)
+            self.shader.set_model_matrix(self.model_matrix.matrix)
+            sphere.draw(self.shader)
+
+
+            self.model_matrix.pop_matrix()
+
+
+
     def DrawCubes(self):
         for cube in self.cubes:
-            self.model_matrix.push_matrix()
-
-
-            self.model_matrix.add_translation(cube.trans_x,cube.trans_y,cube.trans_z)
-            self.model_matrix.add_scale(cube.scale_x,cube.scale_y,cube.scale_z)
-            cube.draw(self.shader)
-
-            self.shader.set_light_possition(0,4243,154)
-            self.shader.set_light_diffuse(1,0,255)
-            self.shader.set_light_specular(255,255,255)
+            self.shader.set_light_possition(0,10,0)
+            self.shader.set_light_diffuse(1,1,1)
+            self.shader.set_light_specular(1,1,1)
             self.shader.set_light_ambient(13,0.3,255)
 
             self.shader.set_material_shininess(cube.shine)
@@ -262,18 +330,18 @@ class GraphicsProgram3D:
             self.shader.set_material_specular(cube.specular_r,cube.specular_g,cube.specular_b)
             self.shader.set_material_ambient(cube.ambient_r,cube.ambient_g,cube.ambient_b) #The natural color of the meterial
             
+            self.model_matrix.push_matrix()
+            self.model_matrix.add_translation(cube.trans_x,cube.trans_y,cube.trans_z)
+            self.model_matrix.add_scale(cube.scale_x,cube.scale_y,cube.scale_z)
             self.shader.set_model_matrix(self.model_matrix.matrix)
+            cube.draw(self.shader)
+
+
             self.model_matrix.pop_matrix()
 
     def DrawPlayerIndicator(self):
         self.model_matrix.push_matrix()
         
-        self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
-        scale = 0.7
-        self.model_matrix.add_scale(scale, scale, scale)
-
-        self.minimap_indicator.draw(self.shader)
-
         self.shader.set_light_possition(self.view_matrix.eye.x, self.view_matrix.eye.y + 20, self.view_matrix.eye.z)
         self.shader.set_light_diffuse(1,0,255)
         self.shader.set_light_specular(255,255,255)
@@ -284,14 +352,23 @@ class GraphicsProgram3D:
         self.shader.set_material_specular(1, 0 ,0)
         self.shader.set_material_ambient(1, 0 ,0) #The natural color of the meterial
         
+        self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
+        scale = 0.4
+        self.model_matrix.add_scale(scale, scale, scale)
         self.shader.set_model_matrix(self.model_matrix.matrix)
+
+        self.minimap_indicator.draw(self.shader)
+
         self.model_matrix.pop_matrix()
         
 
     def start(self):
-        #MakeCube (Translation, scale, diffuse, specular, ambiance, shine)
+        #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
 
+        self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 5)
+        self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,0,0.5, 0,0.5,0, 13)
 
+        
         #Maze
         self.MakeCube(-5,2,-1, 12,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(4,2,-3, 1,1.5,5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
@@ -320,7 +397,7 @@ class GraphicsProgram3D:
         #Top
         self.MakeCube(12,6,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
         #Next top
-        self.MakeCube(11,4,11, 1,1.5,1, 1,0.3,0.05, 0.009,0.3,0, 0,0.05,0, 10)
+        self.MakeCube(11,4,11, 1,1.5,1, 0,1,1, 1,1,1, 0,0,0, 5)
         self.MakeCube(13,4,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
         self.MakeCube(11,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
         self.MakeCube(13,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)

@@ -27,16 +27,16 @@ void main(void)
 	vec4 normal = vec4(a_normal.x, a_normal.y, a_normal.z, 0.0);
 
 	position = u_model_matrix * position;
-	normal = u_model_matrix * normal;
+	normal = normalize(u_model_matrix * normal);
 
 	//float light_factor_1 = max(dot(normalize(normal), normalize(vec4(1, 2, 3, 0))), 0.0);
 	//float light_factor_2 = max(dot(normalize(normal), normalize(vec4(-3, -2, -1, 0))), 0.0);
 	//v_color = (light_factor_1 + light_factor_2) * u_color; // ### --- Change this vector (pure white) to color variable --- #####
 	
 	float n_length = length(normal);
-	vec4 v = u_eye_pos - position;
+	vec4 v = (u_eye_pos - position);
 
-	vec4 s = u_light_position - position;
+	vec4 s = (u_light_position - position);
 	vec4 h = s+v;
 	
 	float s_length = length(s);
@@ -50,7 +50,7 @@ void main(void)
 	vec4 lightCalculatedColor = ambientColor + diffuseColor + specularColor;
 	
 
-	v_color = u_global_ambient * u_material_diffuse + lightCalculatedColor ;
+	v_color =  lightCalculatedColor ;
  
 	position = u_projection_matrix * (u_view_matrix * position);
 
