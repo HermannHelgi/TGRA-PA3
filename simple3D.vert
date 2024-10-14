@@ -33,16 +33,13 @@ void main(void)
 	//float light_factor_2 = max(dot(normalize(normal), normalize(vec4(-3, -2, -1, 0))), 0.0);
 	//v_color = (light_factor_1 + light_factor_2) * u_color; // ### --- Change this vector (pure white) to color variable --- #####
 	
-	float n_length = length(normal);
-	vec4 v = (u_eye_pos - position);
+	vec4 s = normalize(u_light_position - position);
+	vec4 v = normalize(u_eye_pos - position);
 
-	vec4 s = (u_light_position - position);
-	vec4 h = s+v;
+	vec4 h = normalize(s+v);
 	
-	float s_length = length(s);
-	float h_length = length(h);
-	float lambert = max(0.0,(dot(normal,s)/s_length*n_length));
-	float phong = max(0.0,(dot(normal,h)/h_length*n_length));
+	float lambert = max( dot(normal,s), 0.0);
+	float phong = max( dot(normal,h), 0.0);
 
 	vec4 ambientColor = u_light_ambient * u_material_ambient;
 	vec4 diffuseColor = u_light_diffuse * u_material_diffuse * lambert;
