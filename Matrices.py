@@ -57,6 +57,7 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
 
     def add_rotation_x(self, theta=0):
+        theta = self.degrees_to_radians(theta)
         other_matrix = [1, 0, 0, 0,
                         0, cos(theta), -sin(theta), 0,
                         0, sin(theta), cos(theta), 0,
@@ -64,6 +65,7 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
 
     def add_rotation_y(self, theta=0):
+        theta = self.degrees_to_radians(theta)
         other_matrix = [cos(theta), 0, sin(theta), 0,
                         0, 1, 0, 0,
                         -sin(theta), 0, cos(theta), 0,
@@ -71,6 +73,7 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
     
     def add_rotation_z(self, theta=0):
+        theta = self.degrees_to_radians(theta)
         other_matrix = [cos(theta), -sin(theta), 0, 0,
                         sin(theta), cos(theta), 0, 0,
                         0, 0, 1, 0,
@@ -84,6 +87,9 @@ class ModelMatrix:
 
     def pop_matrix(self):
         self.matrix = self.stack.pop()
+
+    def degrees_to_radians(self, degrees):
+        return (degrees * pi / 180)
 
     # This operation mainly for debugging
     def __str__(self):
@@ -108,7 +114,7 @@ class ViewMatrix:
         self.max_pitch = math.radians(90)
         self.min_pitch = math.radians(-90)
 
-    def slide(self, del_u, del_v, del_n, canFly, arr=[]):
+    def slide(self, del_u, del_v, del_n, canFly, arr=[], coffee=[], coffee_range=0):
         old_x = self.eye.x
         old_z = self.eye.z
         self.eye.x += self.u.x * del_u + self.v.x * del_v + self.norm_vector.x * del_n
@@ -127,8 +133,15 @@ class ViewMatrix:
                     if hit_z >= 0:
                         self.eye.z = clamp_z
 
+        coffee_to_remove = -1
+        for index, coffee_cup in enumerate(coffee):
+            if (sqrt((coffee_cup[0] - self.eye.x) ** 2 + (coffee_cup[1] - self.eye.z) ** 2) < coffee_range):
+                coffee_to_remove = index
+
         if (canFly):
             self.eye.y += self.u.y * del_u + self.v.y * del_v + self.norm_vector.y * del_n
+        
+        return coffee_to_remove
 
     def copy_coords(self, another_view_matrix : 'ViewMatrix'):
         self.eye.x = another_view_matrix.eye.x
