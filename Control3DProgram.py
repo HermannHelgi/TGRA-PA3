@@ -123,7 +123,7 @@ class GraphicsProgram3D:
         
         self.model_matrix.load_identity()
         
-        self.obj_model.draw(self.shader)
+        self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
 
@@ -140,7 +140,6 @@ class GraphicsProgram3D:
         self.model_matrix.load_identity()
         self.DrawPlayerIndicator()
         self.DrawSpheres()
-
         self.DrawCubes()
 
 
@@ -212,6 +211,15 @@ class GraphicsProgram3D:
 
         #OUT OF GAME LOOP
         pygame.quit()
+
+    def DrawLoadedObjects(self):
+        self.model_matrix.push_matrix()
+        self.model_matrix.add_translation(5, 5, 5)
+        self.model_matrix.add_scale(1, 1, 1)
+        self.shader.set_model_matrix(self.model_matrix.matrix)
+        self.obj_model.draw(self.shader)
+
+        self.model_matrix.pop_matrix()
 
     def MakeCube(self,
                   translation_x=0, 
