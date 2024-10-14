@@ -185,7 +185,7 @@ class Sphere:
         shader.set_normal_attribute(self.vertex_array)
         for i in range(0,self.vertex_count,(self.slices +1 )*2):
             glDrawArrays(GL_TRIANGLE_STRIP,i,(self.slices + 1) * 2)
-            
+
 class Color:
     def __init__(self, r, g, b):
         self.r = r
