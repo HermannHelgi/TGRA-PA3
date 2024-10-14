@@ -50,7 +50,7 @@ class GraphicsProgram3D:
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
-        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0], "combined_model.obj")
+        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0], 'coffee_cup.obj')
 
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
