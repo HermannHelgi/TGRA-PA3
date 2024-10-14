@@ -10,6 +10,7 @@ import time
 
 from Shaders import *
 from Matrices import *
+import ojb_3D_loading as obj_3D_loading
 
 class GraphicsProgram3D:
     def __init__(self):
@@ -48,6 +49,8 @@ class GraphicsProgram3D:
         self.minimap_indicator = Sphere()
         self.clock = pygame.time.Clock()
         self.clock.tick()
+
+        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0], "combined_model.obj")
 
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
@@ -120,6 +123,7 @@ class GraphicsProgram3D:
         
         self.model_matrix.load_identity()
         
+        self.obj_model.draw(self.shader)
         self.DrawCubes()
         self.DrawSpheres()
 
@@ -360,7 +364,6 @@ class GraphicsProgram3D:
         self.minimap_indicator.draw(self.shader)
 
         self.model_matrix.pop_matrix()
-        
 
     def start(self):
         #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
