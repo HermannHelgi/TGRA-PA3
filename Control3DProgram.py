@@ -10,7 +10,7 @@ import time
 
 from Shaders import *
 from Matrices import *
-import ojb_3D_loading as obj_3D_loading
+import ojb_3D_loading as obj_3D_loading # Fixed the typo lol
 
 class GraphicsProgram3D:
     def __init__(self):
@@ -45,6 +45,12 @@ class GraphicsProgram3D:
         self.boxes = []
         self.cubes = []
         self.spheres = []
+        self.coffee_locations = []
+        self.coffee_range = 0.5
+        self.coffees_collected = 0
+        self.coffee_locations.append([-7, -5])
+        self.coffee_locations.append([11, -15])
+        self.coffee_locations.append([9, -25])
         self.lights = []
         
         self.mini_map_lights = []
@@ -56,7 +62,7 @@ class GraphicsProgram3D:
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
-        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0], 'coffee_cup.obj')
+        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", '14039_To_go_coffee_cup_with_lid_v1_L3.obj')
 
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
@@ -104,18 +110,18 @@ class GraphicsProgram3D:
 
     def update(self):
         delta_time = self.clock.tick() / 1000.0
-
+        coffee_to_remove = -1
         if (self.forwards_key_down):
-            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
+            coffee_to_remove = self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
             self.mini_map_view.copy_coords(self.view_matrix)
         if (self.backwards_key_down):
-            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes)
+            coffee_to_remove = self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
             self.mini_map_view.copy_coords(self.view_matrix)
         if (self.left_key_down):
-            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            coffee_to_remove = self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
             self.mini_map_view.copy_coords(self.view_matrix)
         if (self.right_key_down):
-            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            coffee_to_remove = self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
             self.mini_map_view.copy_coords(self.view_matrix)
         if (self.rotate_right_key_down):
             self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
@@ -125,16 +131,24 @@ class GraphicsProgram3D:
             self.view_matrix.pitch(self.pitchSpeed * delta_time)
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
+        
+        if (coffee_to_remove != -1):
+            self.coffee_locations.pop(coffee_to_remove)
+            self.coffees_collected += 1
+            self.walkingSpeed += 2
+            self.movementSpeed += 2
+            self.sprintspeed += 2
+            self.projection_matrix.set_perspective(60, (self.screenWidth + 100 * self.coffees_collected)/(self.screenHeight), 0.5, 40)
+            self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         self.light_rotate_angle += 2*delta_time
         self.rotate_light(self.lights[1],self.spheres[1])
 
     def display(self):
-        glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
-
+        glEnable(GL_DEPTH_TEST) 
         glViewport(0, 0, self.screenWidth, self.screenHeight)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)  ### --- YOU CAN ALSO CLEAR ONLY THE COLOR OR ONLY THE DEPTH --- ###
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)  
 
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
@@ -143,8 +157,6 @@ class GraphicsProgram3D:
         self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
-
-
 
         # MINI MAP
         glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
@@ -158,7 +170,7 @@ class GraphicsProgram3D:
         self.DrawPlayerIndicator()
         self.DrawSpheres()
         self.DrawCubes()
-
+        self.DrawLoadedObjects()
 
         glDisable(GL_SCISSOR_TEST)
 
@@ -230,13 +242,18 @@ class GraphicsProgram3D:
         pygame.quit()
 
     def DrawLoadedObjects(self):
-        self.model_matrix.push_matrix()
-        self.model_matrix.add_translation(5, 5, 5)
-        self.model_matrix.add_scale(1, 1, 1)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-        self.obj_model.draw(self.shader)
+        for coffee_cup in self.coffee_locations:
 
-        self.model_matrix.pop_matrix()
+            # NEEDS COLORS
+
+            self.model_matrix.push_matrix()
+            self.model_matrix.add_translation(coffee_cup[0], 1.5, coffee_cup[1])
+            self.model_matrix.add_rotation_x(-90)
+            self.model_matrix.add_scale(0.2, 0.2, 0.2)
+            self.shader.set_model_matrix(self.model_matrix.matrix)
+            self.obj_model.draw(self.shader)
+
+            self.model_matrix.pop_matrix()
 
     def MakeCube(self,
                   translation_x=0, 
@@ -276,7 +293,6 @@ class GraphicsProgram3D:
         new_cube.ambient_g = ambient_g
         new_cube.ambient_b = ambient_b
         new_cube.shine = shine
-
 
         self.cubes.append(new_cube)
         self.boxes.append([translation_x - 0.5 * scale_x - self.invisible_box_padding, translation_x + 0.5 * scale_x + self.invisible_box_padding, translation_z - 0.5 * scale_z - self.invisible_box_padding, self.invisible_box_padding + translation_z + 0.5 * scale_z])
