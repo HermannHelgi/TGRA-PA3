@@ -248,9 +248,14 @@ class GraphicsProgram3D:
 
     def DrawLoadedObjects(self):
         for coffee_cup in self.coffee_locations:
-            self.DrawLights()
             # NEEDS COLORS
-
+            self.DrawLights()
+            
+            self.shader.set_material_shininess(13)
+            self.shader.set_material_diffuse(1,0, 0)
+            self.shader.set_material_specular(1,1,1)
+            self.shader.set_material_ambient(1,0,0) #The natural color of the meterial
+            
             self.model_matrix.push_matrix()
             self.model_matrix.add_translation(coffee_cup[0], 1.5, coffee_cup[1])
             self.model_matrix.add_rotation_x(-90)
@@ -415,14 +420,16 @@ class GraphicsProgram3D:
             self.model_matrix.pop_matrix()
 
     def DrawPlayerIndicator(self):
-        self.model_matrix.push_matrix()
+
         
+        self.DrawLights()
 
 
         self.shader.set_material_shininess(10)
         self.shader.set_material_diffuse(1, 0 ,0)
         self.shader.set_material_specular(1, 0 ,0)
         self.shader.set_material_ambient(1, 0 ,0) #The natural color of the meterial
+        self.model_matrix.push_matrix()
         
         self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
         scale = 0.4
