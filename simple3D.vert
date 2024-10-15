@@ -17,7 +17,7 @@ struct Light {
     vec4 ambient;
 };
 
-uniform Light u_lights[3]; //THIS NEEDS TO BE UPDATED IF MORE OR LESS LIGHTS
+uniform Light u_lights[2]; //THIS NEEDS TO BE UPDATED IF MORE OR LESS LIGHTS
 
 uniform vec4 u_material_specular;
 uniform vec4 u_material_diffuse;
@@ -36,7 +36,7 @@ void main(void)
     vec4 finalColor = vec4(0.0);
 
     // Loop over each light source
-    for (int i = 0; i < 3; i++) //THIS NEEDS TO ALSO BE CHANGED IF MORE OR LESS LIGHTS
+    for (int i = 0; i < 2; i++) //THIS NEEDS TO ALSO BE CHANGED IF MORE OR LESS LIGHTS
 	{
         vec4 s = normalize(u_lights[i].position - position);  
         vec4 v = normalize(u_eye_pos - position);             

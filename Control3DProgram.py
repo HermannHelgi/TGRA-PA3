@@ -439,8 +439,8 @@ class GraphicsProgram3D:
 
 
         #Sun
-        self.MakeLight(-30,30,10, 1,0,0, 1,0,0, 1,0,0)
-        self.MakeSphere(-30,30,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
+        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0)
+        self.MakeSphere(-30,-10,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
 
         #Maze rotate light
         self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
