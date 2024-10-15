@@ -45,6 +45,12 @@ class GraphicsProgram3D:
         self.boxes = []
         self.cubes = []
         self.spheres = []
+        self.lights = []
+        
+        self.mini_map_lights = []
+        self.mini_map_light = Light()
+
+
 
         self.minimap_indicator = Sphere()
         self.clock = pygame.time.Clock()
@@ -85,7 +91,16 @@ class GraphicsProgram3D:
 
         self.invisible_box_padding = 0.7
 
-        self.zoob = 1
+
+        self.light_pos = [0,0,0]
+        self.angle = 0
+
+        #Used specificly to rotate the light around the maze
+        self.light_rotate_angle = 0 
+        self.light_rotate_point = [2,5,-15] #Note hardcoded value
+
+
+
 
     def update(self):
         delta_time = self.clock.tick() / 1000.0
@@ -111,6 +126,9 @@ class GraphicsProgram3D:
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
 
+        self.light_rotate_angle += 2*delta_time
+        self.rotate_light(self.lights[1],self.spheres[1])
+
     def display(self):
         glEnable(GL_DEPTH_TEST)  ### --- NEED THIS FOR NORMAL 3D BUT MANY EFFECTS BETTER WITH glDisable(GL_DEPTH_TEST) ... try it! --- ###
 
@@ -122,7 +140,6 @@ class GraphicsProgram3D:
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
         
         self.model_matrix.load_identity()
-        
         self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
@@ -305,14 +322,41 @@ class GraphicsProgram3D:
         new_sphere.shine = shine
         self.spheres.append(new_sphere)
 
+    def MakeLight(self,                  
+                  
+                  possition_x = 0,
+                  possition_y = 0,
+                  possition_z = 0,
 
+                  diffuse_r = 0, 
+                  diffuse_g = 0, 
+                  diffuse_b = 0,
+                  specular_r = 0,
+                  specular_g = 0,
+                  specular_b = 0,
+                  ambient_r = 0,
+                  ambient_g = 0,
+                  ambient_b = 0,
+                
+                  
+                  ):
+        
+        new_light = Light()
+        possition = [possition_x,possition_y,possition_z]
+        diffuse = [diffuse_r,diffuse_g,diffuse_b]
+        specular = [specular_r,specular_g,specular_b]
+        ambient = [ambient_r,ambient_g,ambient_b]
+        new_light.position = possition
+        new_light.diffuse = diffuse
+        new_light.specular = specular
+        new_light.ambient = ambient
+
+        self.lights.append(new_light)
 
     def DrawSpheres(self):
         for sphere in self.spheres:
-            self.shader.set_light_possition(0,10,0)
-            self.shader.set_light_diffuse(1,1,1)
-            self.shader.set_light_specular(1,1,1)
-            self.shader.set_light_ambient(1,1,1)
+            self.DrawLights()
+
 
             self.shader.set_material_shininess(sphere.shine)
             self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
@@ -328,14 +372,12 @@ class GraphicsProgram3D:
 
             self.model_matrix.pop_matrix()
 
-
+    def DrawLights(self):
+        self.shader.set_lights(self.lights)
 
     def DrawCubes(self):
         for cube in self.cubes:
-            self.shader.set_light_possition(0,10,0)
-            self.shader.set_light_diffuse(1,1,1)
-            self.shader.set_light_specular(1,1,1)
-            self.shader.set_light_ambient(1,1,1)
+            self.DrawLights()
 
             self.shader.set_material_shininess(cube.shine)
             self.shader.set_material_diffuse(cube.diffuse_r,cube.diffuse_g, cube.diffuse_b)
@@ -354,10 +396,7 @@ class GraphicsProgram3D:
     def DrawPlayerIndicator(self):
         self.model_matrix.push_matrix()
         
-        self.shader.set_light_possition(self.view_matrix.eye.x, self.view_matrix.eye.y + 20, self.view_matrix.eye.z)
-        self.shader.set_light_diffuse(1,0,255)
-        self.shader.set_light_specular(255,255,255)
-        self.shader.set_light_ambient(13,0.3,255)
+
 
         self.shader.set_material_shininess(10)
         self.shader.set_material_diffuse(1, 0 ,0)
@@ -373,11 +412,32 @@ class GraphicsProgram3D:
 
         self.model_matrix.pop_matrix()
 
+    def rotate_light(self,light:Light,light_sphere:Sphere):
+        light.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
+        light.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
+        light_sphere.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
+        light_sphere.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
+
+
     def start(self):
+
+
+        #Sun
+        self.MakeLight(-30,30,10, 1,0,0, 1,0,0, 1,0,0)
+        self.MakeSphere(-30,30,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
+
+        #Maze rotate light
+        self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
+        self.MakeSphere(10,5,-20, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+
+        self.MakeLight(0,10,0, 1,1,1, 1,1,1, 1,1,1)
+
+
+
+
         #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
 
         self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
-        self.MakeSphere(-30,30,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
 
         self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,24,0.5, 0,0.5,0, 13)
 
@@ -406,32 +466,6 @@ class GraphicsProgram3D:
         self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
 
 
-        #Pyramid / Diamond
-        #Top
-        self.MakeCube(12,6,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        #Next top
-        self.MakeCube(11,4,11, 1,1.5,1, 0,1,1, 1,1,1, 0,0,0, 5)
-        self.MakeCube(13,4,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(11,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(13,4,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-
-        #Middle layer
-        self.MakeCube(12,2,10, 1,1.5,1, 23,0,0, 0,0,0, 0,0.05,0, 10)
-        self.MakeCube(14,2,10, 1,1.5,1, 0.5,0,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(14,2,12, 1,1.5,1, 0.9,0.3,0, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(10,2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(12,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(10,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(10,2,10, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(12,2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(14,2,14, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        #Next bottom
-        self.MakeCube(11,0,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(13,0,11, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(11,0,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        self.MakeCube(13,0,13, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
-        #Bottom
-        self.MakeCube(12,-2,12, 1,1.5,1, 0,0.3,1, 0,0.3,0, 0,0.05,0, 10)
 
 
         self.program_loop()

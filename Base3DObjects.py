@@ -52,6 +52,14 @@ class Vector:
     def cross(self, other):
         return Vector(self.y*other.z - self.z*other.y, self.z*other.x - self.x*other.z, self.x*other.y - self.y*other.x)
 
+class Light:
+    def __init__(self,position = [],diffuse = [],specular=[],ambient=[]):
+        self.position = position
+        self.diffuse = diffuse
+        self.specular = specular
+        self.ambient = ambient
+
+
 class Cube:
     def __init__(self):
         self.position_array = [-0.5, -0.5, -0.5,
