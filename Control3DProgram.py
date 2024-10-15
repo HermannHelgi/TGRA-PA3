@@ -105,6 +105,11 @@ class GraphicsProgram3D:
         self.light_rotate_angle = 0 
         self.light_rotate_point = [2,5,-15] #Note hardcoded value
 
+        #Sphere zone
+        self.light_rotate_point_box = [2,5,25] #Note hardcoded value
+
+        
+
 
 
 
@@ -142,7 +147,7 @@ class GraphicsProgram3D:
             self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         self.light_rotate_angle += 2*delta_time
-        self.rotate_light(self.lights[1],self.spheres[1])
+        self.rotate_light(self.lights[1],self.spheres[1],self.lights[-1],self.cubes[-1])
 
     def display(self):
         glEnable(GL_DEPTH_TEST) 
@@ -243,7 +248,7 @@ class GraphicsProgram3D:
 
     def DrawLoadedObjects(self):
         for coffee_cup in self.coffee_locations:
-
+            self.DrawLights()
             # NEEDS COLORS
 
             self.model_matrix.push_matrix()
@@ -428,25 +433,30 @@ class GraphicsProgram3D:
 
         self.model_matrix.pop_matrix()
 
-    def rotate_light(self,light:Light,light_sphere:Sphere):
-        light.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
-        light.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
+    def rotate_light(self,light_1:Light,light_sphere:Sphere,light_2:Light,light_box:Cube):
+        light_1.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
+        light_1.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
         light_sphere.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
         light_sphere.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
 
+        light_2.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
+        light_2.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
+        light_box.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
+        light_box.trans_y = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[1]
+        light_box.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
 
     def start(self):
 
 
         #Sun
-        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0)
+        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0) #It's a bit too much
         self.MakeSphere(-30,-10,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
 
         #Maze rotate light
         self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
         self.MakeSphere(10,5,-20, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
 
-        self.MakeLight(0,10,0, 1,1,1, 1,1,1, 1,1,1)
+        #self.MakeLight(0,10,0, 1,1,1, 1,1,1, 1,1,1)
 
 
 
@@ -480,6 +490,26 @@ class GraphicsProgram3D:
         self.MakeCube(7,2,-12, 1,1.5,16, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(10,2,-13, 1,1.5,18, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+
+
+        #Spheare zone
+        self.MakeLight(20,3,20, 1,1,1, 1,1,1, 1,1,1)
+
+        self.MakeSphere(-5,2,13, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
+        self.MakeSphere(-9,6.7,17, 2,2,2, 1,0.5,0 ,0.7,0,0.3, 0,0,0.9, 10)
+
+        self.MakeSphere(5,-2,26, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
+        self.MakeSphere(-4,13,26, 1,1,1, 0.05,0,0.8 ,0.5,0.2,0.3, 0.1,0,0.9, 20)
+
+        self.MakeSphere(-4,2,26, 1,1,1, 0.5,1,0.8 ,0.5,1,0.3, 0.1,1,0.9, 20)
+
+        self.MakeCube(14,2,-28, 2,2,2, 1,1,1, 1,1,1, 1,1,1, 10)
+
+
+
+
+
+
 
 
 
