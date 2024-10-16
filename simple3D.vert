@@ -9,7 +9,7 @@ uniform mat4 u_projection_matrix;
 
 varying vec4 v_color;  // Leave the varying variables as they are
 
-// Define a struct for Light properties
+
 struct Light {
     vec4 position;
     vec4 diffuse;

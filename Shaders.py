@@ -44,6 +44,8 @@ class Shader3D:
 
         #Light variables
         self.lightArrLoc = glGetUniformLocation(self.renderingProgramID,"u_lights")
+
+        #Old varablies for when we only had one light 
         #self.lightPosLoc = glGetUniformLocation(self.renderingProgramID,"u_light_position")
         #self.lightDifLoc = glGetUniformLocation(self.renderingProgramID,"u_light_diffuse")
         #self.lightSpecLoc = glGetUniformLocation(self.renderingProgramID,"u_light_specular")
@@ -90,7 +92,8 @@ class Shader3D:
 
             glUniform4f(glGetUniformLocation(self.renderingProgramID,f'u_lights[{i}].ambient'), light.ambient[0], light.ambient[1], light.ambient[2], 1.0)
 
-            
+        
+    #Old functions for when we only had one light
 
     #def set_light_possition(self,x,y,z):
         #glUniform4f(self.lightPosLoc,x,y,z,0)

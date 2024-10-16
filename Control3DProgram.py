@@ -108,8 +108,11 @@ class GraphicsProgram3D:
         """
         Updates the game.
         """
+        
         delta_time = self.clock.tick() / 1000.0
         coffee_to_remove = -1
+
+        #Controls
         if (self.forwards_key_down):
             coffee_to_remove = self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
             self.mini_map_view.copy_coords(self.view_matrix)
@@ -131,6 +134,7 @@ class GraphicsProgram3D:
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
         
+        #Coffe power up
         if (coffee_to_remove != -1):
             self.coffee_locations.pop(coffee_to_remove)
             self.coffees_collected += 1
@@ -140,6 +144,7 @@ class GraphicsProgram3D:
             self.projection_matrix.set_perspective(60, (self.screenWidth + 100 * self.coffees_collected)/(self.screenHeight), 0.5, 40)
             self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
+        #Rotating the light within the sceene
         self.light_rotate_angle += 2*delta_time
         self.rotate_light(self.lights[1],self.spheres[1],self.lights[-1],self.cubes[-1])
 
@@ -147,6 +152,7 @@ class GraphicsProgram3D:
         """
         Displays all graphics for the game, is split into 'Main view' and 'Minimap' for those two viewports.
         """
+        #Setup
         glEnable(GL_DEPTH_TEST) 
         glViewport(0, 0, self.screenWidth, self.screenHeight)
         glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -154,7 +160,6 @@ class GraphicsProgram3D:
 
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
-        
         self.model_matrix.load_identity()
         self.DrawLoadedObjects()
         self.DrawCubes()
@@ -208,13 +213,14 @@ class GraphicsProgram3D:
                         self.backwards_key_down = True
                     elif event.key == self.rightWalkKey:
                         self.right_key_down = True
+                    elif event.key == self.sprintKey:
+                        self.movementSpeed = self.sprintspeed
                     #Rotation (Left - Right)
                     elif event.key == self.rotateRightKey:
                         self.rotate_right_key_down = True
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = True
-                    elif event.key == self.sprintKey:
-                        self.movementSpeed = self.sprintspeed
+
 
                 elif event.type == pygame.KEYUP:
                     #Pitch (Up - Down)
@@ -231,13 +237,14 @@ class GraphicsProgram3D:
                         self.backwards_key_down = False
                     elif event.key == self.rightWalkKey:
                         self.right_key_down = False
+                    elif event.key == self.sprintKey:
+                        self.movementSpeed = self.walkingSpeed
                     #Rotation (Left - Right)    
                     elif event.key == self.rotateRightKey:
                         self.rotate_right_key_down = False
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = False
-                    elif event.key == self.sprintKey:
-                        self.movementSpeed = self.walkingSpeed
+
             
             self.update()
             self.display()
@@ -267,7 +274,7 @@ class GraphicsProgram3D:
                   
                   ):
         """
-        Makes a new cube.
+        Makes a new cube and adds it to list of cubes within the game.
         """
         new_cube = Cube()
         new_cube.trans_x = translation_x
@@ -312,7 +319,7 @@ class GraphicsProgram3D:
                   
                   ):
         """
-        Makes a new sphere.
+        Makes a new sphere and adds it to list of spheres within the game
         """
         new_sphere = Sphere()
         new_sphere.trans_x = translation_x
@@ -352,7 +359,8 @@ class GraphicsProgram3D:
                   
                   ):
         """
-        Makes a new light, note simple3d.vert will have to be changed if more lights are added!
+        Makes a new light and adds it to list of lights within the game.
+        Note simple3d.vert will need to be manualy updated if more lights are added!
         """
         new_light = Light()
         possition = [possition_x,possition_y,possition_z]
@@ -389,10 +397,10 @@ class GraphicsProgram3D:
 
     def DrawSpheres(self):
         """
-        Draws all spheres.
+        Draws all spheres into the sceene.
         """
         for sphere in self.spheres:
-            self.DrawLights()
+            self.DrawLights() #Need to calculate the lights for each object
 
             self.shader.set_material_shininess(sphere.shine)
             self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
@@ -409,16 +417,16 @@ class GraphicsProgram3D:
 
     def DrawLights(self):
         """
-        Draws lights.
+        Draws lights into the sceene.
         """
         self.shader.set_lights(self.lights)
 
     def DrawCubes(self):
         """
-        Draws all cubes.
+        Draws all cubes into the sceene.
         """
         for cube in self.cubes:
-            self.DrawLights()
+            self.DrawLights() # Need to calculate all the lights for each material values of each object.
 
             self.shader.set_material_shininess(cube.shine)
             self.shader.set_material_diffuse(cube.diffuse_r,cube.diffuse_g, cube.diffuse_b)
@@ -437,7 +445,7 @@ class GraphicsProgram3D:
         """
         Draws the red circle indicator on the minimap to indicate the player.
         """
-        self.DrawLights()
+        self.DrawLights() #Make sure the light is correct for the indicator
 
         self.shader.set_material_shininess(10)
         self.shader.set_material_diffuse(1, 0 ,0)
@@ -458,21 +466,29 @@ class GraphicsProgram3D:
         """
         Rotates the lights in the scene.
         """
+        #Around the maze
         light_1.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
         light_1.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
         light_sphere.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
         light_sphere.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
 
+        #Around the sphere zone
         light_2.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
         light_2.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
         light_box.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
         light_box.trans_y = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[1]
         light_box.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
 
+        
+
     def start(self):
         """
-        Pre-initialization of game.
+        Pre-initialization of game. Creating all the lights, cubes and spheres.
         """
+
+        #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
+
+
         #Sun
         self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0) 
         self.MakeSphere(-30,-10,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
@@ -481,7 +497,6 @@ class GraphicsProgram3D:
         self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
         self.MakeSphere(10,5,-20, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
 
-        #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
         self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
         self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,24,0.5, 0,0.5,0, 13)
         

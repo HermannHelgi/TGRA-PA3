@@ -9,6 +9,8 @@ from math import *
 
 import numpy
 
+#We completly forgot that the point class existed.. don't think we ever used it.
+
 class Point:
     def __init__(self, x, y, z):
         self.x = x
