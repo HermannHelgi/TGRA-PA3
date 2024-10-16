@@ -1,4 +1,3 @@
-
 import random
 from random import *
 
@@ -51,6 +50,7 @@ class Vector:
 
     def cross(self, other):
         return Vector(self.y*other.z - self.z*other.y, self.z*other.x - self.x*other.z, self.x*other.y - self.y*other.x)
+
 
 class Light:
     def __init__(self,position = [],diffuse = [],specular=[],ambient=[]):
@@ -131,7 +131,6 @@ class Cube:
         self.shine = 0
 
     def draw(self, shader):
-        
         shader.set_position_attribute(self.position_array)
         shader.set_normal_attribute(self.normal_array)
         
@@ -143,7 +142,6 @@ class Cube:
         glDrawArrays(GL_TRIANGLE_FAN, 20, 4)
 
 class Sphere:
-
     def __init__(self,stacks = 12, slices = 23):
 
         self.trans_x = 0
@@ -186,19 +184,19 @@ class Sphere:
 
                 self.vertex_count += 2
 
-
-
     def draw(self,shader):
         shader.set_position_attribute(self.vertex_array)
         shader.set_normal_attribute(self.vertex_array)
         for i in range(0,self.vertex_count,(self.slices +1 )*2):
             glDrawArrays(GL_TRIANGLE_STRIP,i,(self.slices + 1) * 2)
 
+
 class Color:
     def __init__(self, r, g, b):
         self.r = r
         self.g = g
         self.b = b
+
 
 class Material:
     def __init__(self, diffuse = None, specular = None, shininess = None):
@@ -235,7 +233,6 @@ class MeshModel:
             glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer_ids[mesh_id])
             glBufferData(GL_ARRAY_BUFFER, numpy.array(self.vertex_arrays[mesh_id], dtype='float32'), GL_STATIC_DRAW)
             glBindBuffer(GL_ARRAY_BUFFER, 0)
-
 
     def draw(self, shader):
         for mesh_id, mesh_material in self.mesh_materials.items():

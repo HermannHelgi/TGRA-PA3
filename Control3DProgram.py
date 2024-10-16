@@ -1,5 +1,3 @@
-# from OpenGL.GL import *
-# from OpenGL.GLU import *
 from math import *
 
 import pygame
@@ -10,11 +8,10 @@ import time
 
 from Shaders import *
 from Matrices import *
-import ojb_3D_loading as obj_3D_loading # Fixed the typo lol
+import ojb_3D_loading as obj_3D_loading
 
 class GraphicsProgram3D:
     def __init__(self):
-
         # WINDOW VARIABLES AND INITIALIZATION #
         self.screenWidth = 800
         self.screenHeight = 600
@@ -42,6 +39,17 @@ class GraphicsProgram3D:
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 40)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
+
+        # EDITOR & SPEED VARIABLES # 
+        self.canFly = False
+        self.movementSpeed = 3
+        self.walkingSpeed = self.movementSpeed
+        self.sprintspeed = 6
+
+        self.rotationSpeed = 120
+        self.pitchSpeed = 60
+
+        # INTERNAL VARIABLES #
         self.boxes = []
         self.cubes = []
         self.spheres = []
@@ -56,24 +64,13 @@ class GraphicsProgram3D:
         self.mini_map_lights = []
         self.mini_map_light = Light()
 
-
-
         self.minimap_indicator = Sphere()
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
         self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", '14039_To_go_coffee_cup_with_lid_v1_L3.obj')
-
-        # EDITOR & SPEED VARIABLES # 
-        self.canFly = False
-        self.movementSpeed = 3
-        self.walkingSpeed = self.movementSpeed
-        self.sprintspeed = 6
-
-        self.rotationSpeed = 120
-        self.pitchSpeed = 60
-
-        # INTERNAL VARIABLES #
+        
+        # Movement presets.
         self.pitchUpKey = K_UP
         self.pitchDownKey = K_DOWN
         self.rotateLeftKey = K_LEFT
@@ -95,25 +92,22 @@ class GraphicsProgram3D:
         self.backwards_key_down = False
         self.right_key_down = False
 
-        self.invisible_box_padding = 0.7
-
+        self.invisible_box_padding = 0.7 # Padding on AABB
 
         self.light_pos = [0,0,0]
         self.angle = 0
 
-        #Used specificly to rotate the light around the maze
+        # Used to rotate the light around the maze
         self.light_rotate_angle = 0 
         self.light_rotate_point = [2,5,-15] #Note hardcoded value
 
-        #Sphere zone
+        # Sphere zone
         self.light_rotate_point_box = [2,5,25] #Note hardcoded value
 
-        
-
-
-
-
     def update(self):
+        """
+        Updates the game.
+        """
         delta_time = self.clock.tick() / 1000.0
         coffee_to_remove = -1
         if (self.forwards_key_down):
@@ -150,6 +144,9 @@ class GraphicsProgram3D:
         self.rotate_light(self.lights[1],self.spheres[1],self.lights[-1],self.cubes[-1])
 
     def display(self):
+        """
+        Displays all graphics for the game, is split into 'Main view' and 'Minimap' for those two viewports.
+        """
         glEnable(GL_DEPTH_TEST) 
         glViewport(0, 0, self.screenWidth, self.screenHeight)
         glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -182,6 +179,9 @@ class GraphicsProgram3D:
         pygame.display.flip()
 
     def program_loop(self):
+        """
+        Main loop for program.
+        """
         exiting = False
 
         while not exiting:
@@ -238,32 +238,12 @@ class GraphicsProgram3D:
                         self.rotate_left_key_down = False
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.walkingSpeed
-                    
             
             self.update()
             self.display()
 
         #OUT OF GAME LOOP
         pygame.quit()
-
-    def DrawLoadedObjects(self):
-        for coffee_cup in self.coffee_locations:
-            # NEEDS COLORS
-            self.DrawLights()
-            
-            self.shader.set_material_shininess(13)
-            self.shader.set_material_diffuse(1,0, 0)
-            self.shader.set_material_specular(1,1,1)
-            self.shader.set_material_ambient(1,0,0) #The natural color of the meterial
-            
-            self.model_matrix.push_matrix()
-            self.model_matrix.add_translation(coffee_cup[0], 1.5, coffee_cup[1])
-            self.model_matrix.add_rotation_x(-90)
-            self.model_matrix.add_scale(0.2, 0.2, 0.2)
-            self.shader.set_model_matrix(self.model_matrix.matrix)
-            self.obj_model.draw(self.shader)
-
-            self.model_matrix.pop_matrix()
 
     def MakeCube(self,
                   translation_x=0, 
@@ -286,6 +266,9 @@ class GraphicsProgram3D:
                   shine = 0
                   
                   ):
+        """
+        Makes a new cube.
+        """
         new_cube = Cube()
         new_cube.trans_x = translation_x
         new_cube.trans_y = translation_y
@@ -306,7 +289,6 @@ class GraphicsProgram3D:
 
         self.cubes.append(new_cube)
         self.boxes.append([translation_x - 0.5 * scale_x - self.invisible_box_padding, translation_x + 0.5 * scale_x + self.invisible_box_padding, translation_z - 0.5 * scale_z - self.invisible_box_padding, self.invisible_box_padding + translation_z + 0.5 * scale_z])
-
 
     def MakeSphere(self,
                   translation_x=0, 
@@ -329,6 +311,9 @@ class GraphicsProgram3D:
                   shine = 0
                   
                   ):
+        """
+        Makes a new sphere.
+        """
         new_sphere = Sphere()
         new_sphere.trans_x = translation_x
         new_sphere.trans_y = translation_y
@@ -366,7 +351,9 @@ class GraphicsProgram3D:
                 
                   
                   ):
-        
+        """
+        Makes a new light, note simple3d.vert will have to be changed if more lights are added!
+        """
         new_light = Light()
         possition = [possition_x,possition_y,possition_z]
         diffuse = [diffuse_r,diffuse_g,diffuse_b]
@@ -379,10 +366,33 @@ class GraphicsProgram3D:
 
         self.lights.append(new_light)
 
+    def DrawLoadedObjects(self):
+        """
+        Draws all loaded 3D object files.
+        """
+        for coffee_cup in self.coffee_locations:
+            self.DrawLights()
+            
+            self.shader.set_material_shininess(13)
+            self.shader.set_material_diffuse(1,0, 0)
+            self.shader.set_material_specular(1,1,1)
+            self.shader.set_material_ambient(1,0,0)
+            
+            self.model_matrix.push_matrix()
+            self.model_matrix.add_translation(coffee_cup[0], 1.5, coffee_cup[1])
+            self.model_matrix.add_rotation_x(-90)
+            self.model_matrix.add_scale(0.2, 0.2, 0.2)
+            self.shader.set_model_matrix(self.model_matrix.matrix)
+            self.obj_model.draw(self.shader)
+
+            self.model_matrix.pop_matrix()
+
     def DrawSpheres(self):
+        """
+        Draws all spheres.
+        """
         for sphere in self.spheres:
             self.DrawLights()
-
 
             self.shader.set_material_shininess(sphere.shine)
             self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
@@ -395,13 +405,18 @@ class GraphicsProgram3D:
             self.shader.set_model_matrix(self.model_matrix.matrix)
             sphere.draw(self.shader)
 
-
             self.model_matrix.pop_matrix()
 
     def DrawLights(self):
+        """
+        Draws lights.
+        """
         self.shader.set_lights(self.lights)
 
     def DrawCubes(self):
+        """
+        Draws all cubes.
+        """
         for cube in self.cubes:
             self.DrawLights()
 
@@ -416,19 +431,18 @@ class GraphicsProgram3D:
             self.shader.set_model_matrix(self.model_matrix.matrix)
             cube.draw(self.shader)
 
-
             self.model_matrix.pop_matrix()
 
     def DrawPlayerIndicator(self):
-
-        
+        """
+        Draws the red circle indicator on the minimap to indicate the player.
+        """
         self.DrawLights()
-
 
         self.shader.set_material_shininess(10)
         self.shader.set_material_diffuse(1, 0 ,0)
         self.shader.set_material_specular(1, 0 ,0)
-        self.shader.set_material_ambient(1, 0 ,0) #The natural color of the meterial
+        self.shader.set_material_ambient(1, 0 ,0) 
         self.model_matrix.push_matrix()
         
         self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
@@ -441,6 +455,9 @@ class GraphicsProgram3D:
         self.model_matrix.pop_matrix()
 
     def rotate_light(self,light_1:Light,light_sphere:Sphere,light_2:Light,light_box:Cube):
+        """
+        Rotates the lights in the scene.
+        """
         light_1.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
         light_1.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
         light_sphere.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
@@ -453,30 +470,23 @@ class GraphicsProgram3D:
         light_box.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
 
     def start(self):
-
-
+        """
+        Pre-initialization of game.
+        """
         #Sun
-        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0) #It's a bit too much
+        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0) 
         self.MakeSphere(-30,-10,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
 
         #Maze rotate light
         self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
         self.MakeSphere(10,5,-20, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
 
-        #self.MakeLight(0,10,0, 1,1,1, 1,1,1, 1,1,1)
-
-
-
-
         #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
-
         self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
-
         self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,24,0.5, 0,0.5,0, 13)
-
         
         #Maze
-        self.MakeCube(-5,2,-1, 12,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(-5,2,-0.9, 12,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(4,2,-3, 1,1.5,5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(9.5,2,-1, 10,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(2,2,-5, 4,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
@@ -489,37 +499,23 @@ class GraphicsProgram3D:
         self.MakeCube(-6,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(4,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(2.5,2,-30, 24,1.5,1.5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(7,2,-20, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(11,2,-22, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(9,2,-22, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(13,2,-26, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(14,2,-11, 1,1.5,20, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(7,2,-12, 1,1.5,16, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        self.MakeCube(7,2,-15, 1,1.5,22, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(10,2,-13, 1,1.5,18, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
         self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-
 
         #Spheare zone
         self.MakeLight(20,3,20, 1,1,1, 1,1,1, 1,1,1)
 
         self.MakeSphere(-5,2,13, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
         self.MakeSphere(-9,6.7,17, 2,2,2, 1,0.5,0 ,0.7,0,0.3, 0,0,0.9, 10)
-
         self.MakeSphere(5,-2,26, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
         self.MakeSphere(-4,13,26, 1,1,1, 0.05,0,0.8 ,0.5,0.2,0.3, 0.1,0,0.9, 20)
-
         self.MakeSphere(-4,2,26, 1,1,1, 0.5,1,0.8 ,0.5,1,0.3, 0.1,1,0.9, 20)
-
         self.MakeCube(14,2,-28, 2,2,2, 1,1,1, 1,1,1, 1,1,1, 10)
-
-
-
-
-
-
-
-
-
 
         self.program_loop()
 

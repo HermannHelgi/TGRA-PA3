@@ -1,5 +1,4 @@
-
-from math import * # trigonometry
+from math import *
 
 from Base3DObjects import *
 
@@ -34,15 +33,11 @@ class ModelMatrix:
                     new_matrix[counter] += self.matrix[row*4 + i]*matrix2[col + 4*i]
                 counter += 1
         self.matrix = new_matrix
-
-    def add_nothing(self):
-        other_matrix = [1, 0, 0, 0,
-                        0, 1, 0, 0,
-                        0, 0, 1, 0,
-                        0, 0, 0, 1]
-        self.add_transformation(other_matrix)
     
     def add_translation(self, x=0, y=0, z=0):
+        """
+        Changes a models locational coordinates.
+        """
         other_matrix = [1, 0, 0, x,
                         0, 1, 0, y,
                         0, 0, 1, z,
@@ -50,6 +45,9 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
     
     def add_scale(self, x=1, y=1, z=1):
+        """
+        Changes a models scale.
+        """
         other_matrix = [x, 0, 0, 0,
                         0, y, 0, 0,
                         0, 0, z, 0,
@@ -57,6 +55,9 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
 
     def add_rotation_x(self, theta=0):
+        """
+        Rotates a model by some angle along the x axis.
+        """
         theta = self.degrees_to_radians(theta)
         other_matrix = [1, 0, 0, 0,
                         0, cos(theta), -sin(theta), 0,
@@ -65,6 +66,9 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
 
     def add_rotation_y(self, theta=0):
+        """
+        Rotates a model by some angle along the y axis.
+        """
         theta = self.degrees_to_radians(theta)
         other_matrix = [cos(theta), 0, sin(theta), 0,
                         0, 1, 0, 0,
@@ -73,6 +77,9 @@ class ModelMatrix:
         self.add_transformation(other_matrix)
     
     def add_rotation_z(self, theta=0):
+        """
+        Rotates a model by some angle along the z axis.
+        """
         theta = self.degrees_to_radians(theta)
         other_matrix = [cos(theta), -sin(theta), 0, 0,
                         sin(theta), cos(theta), 0, 0,
@@ -80,8 +87,6 @@ class ModelMatrix:
                         0, 0, 0, 1]
         self.add_transformation(other_matrix)
 
-    # YOU CAN TRY TO MAKE PUSH AND POP (AND COPY) LESS DEPENDANT ON GARBAGE COLLECTION
-    # THAT CAN FIX SMOOTHNESS ISSUES ON SOME COMPUTERS
     def push_matrix(self):
         self.stack.append(self.copy_matrix())
 
@@ -89,6 +94,9 @@ class ModelMatrix:
         self.matrix = self.stack.pop()
 
     def degrees_to_radians(self, degrees):
+        """
+        Helper function.
+        """
         return (degrees * pi / 180)
 
     # This operation mainly for debugging
@@ -115,6 +123,10 @@ class ViewMatrix:
         self.min_pitch = math.radians(-90)
 
     def slide(self, del_u, del_v, del_n, canFly, arr=[], coffee=[], coffee_range=0):
+        """
+        Slides the camera around as specified, also checks for collisions with any entity after movement.
+        Collision system is based on AABB. (Axis-Aligned Bounded Box)
+        """
         old_x = self.eye.x
         old_z = self.eye.z
         self.eye.x += self.u.x * del_u + self.v.x * del_v + self.norm_vector.x * del_n
@@ -134,7 +146,7 @@ class ViewMatrix:
                         self.eye.z = clamp_z
 
         coffee_to_remove = -1
-        for index, coffee_cup in enumerate(coffee):
+        for index, coffee_cup in enumerate(coffee): # Checking for coffee collision.
             if (sqrt((coffee_cup[0] - self.eye.x) ** 2 + (coffee_cup[1] - self.eye.z) ** 2) < coffee_range):
                 coffee_to_remove = index
 
@@ -143,11 +155,17 @@ class ViewMatrix:
         
         return coffee_to_remove
 
-    def copy_coords(self, another_view_matrix : 'ViewMatrix'):
+    def copy_coords(self, another_view_matrix : 'ViewMatrix'): 
+        """
+        Used by secondary minimap camera to follow the players camera.
+        """
         self.eye.x = another_view_matrix.eye.x
         self.eye.z = another_view_matrix.eye.z
 
     def check_hit_and_clamp(self, old_pos, new_pos, min_bound, max_bound):
+        """
+        Collision function, checks some local box in what way the player has collided with it.
+        """
         EPSILON = 0.0001
         hit = -1
         clamp_pos = new_pos
@@ -161,13 +179,10 @@ class ViewMatrix:
 
         return hit, clamp_pos
 
-    def isNegative(self, num):
-        if (num < 0):
-            return -1
-        else:
-            return 1
-
     def rotate_on_floor(self, angle):
+        """
+        Rotates the camera, similar to yaw, but won't make the camera spin into the ground.
+        """
         angle = self.degrees_to_radians(angle)
         temp = cos(angle) * self.u.x + sin(angle) * self.u.z
         self.u.z = cos(angle) * self.u.z - sin(angle) * self.u.x
@@ -182,6 +197,9 @@ class ViewMatrix:
         self.norm_vector.x = temp
     
     def pitch(self, angle):
+        """
+        Changes the pitch of the camera.
+        """
         angle = self.degrees_to_radians(angle)
         new_pitch = self.current_pitch + angle
 
@@ -202,9 +220,15 @@ class ViewMatrix:
         self.v = temp
 
     def degrees_to_radians(self, degrees):
+        """ 
+        Helper function. 
+        """
         return (degrees * pi / 180)
 
     def look(self, eye, center, up):
+        """
+        Centers Camera on a point.
+        """
         self.eye = eye
         self.norm_vector = (eye - center)
         self.norm_vector.normalize()
