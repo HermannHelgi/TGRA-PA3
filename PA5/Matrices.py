@@ -155,13 +155,6 @@ class ViewMatrix:
         
         return coffee_to_remove
 
-    def copy_coords(self, another_view_matrix : 'ViewMatrix'): 
-        """
-        Used by secondary minimap camera to follow the players camera.
-        """
-        self.eye.x = another_view_matrix.eye.x
-        self.eye.z = another_view_matrix.eye.z
-
     def check_hit_and_clamp(self, old_pos, new_pos, min_bound, max_bound):
         """
         Collision function, checks some local box in what way the player has collided with it.
