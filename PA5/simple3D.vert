@@ -15,9 +15,9 @@ struct Light {
     vec4 ambient;
 };
 
-uniform Light u_lights[3];  // Light array
-varying vec4 v_s[3];
-varying vec4 v_h[3];
+uniform Light u_lights[5];  // Light array
+varying vec4 v_s[5];
+varying vec4 v_h[5];
 
 varying vec4 v_frag_pos;     
 varying vec4 v_normal;
@@ -30,7 +30,7 @@ void main(void)
     position = u_model_matrix * position;
     v_normal = normalize(u_model_matrix * normal);
 
-    for(int i = 0; i < 3; i ++)
+    for(int i = 0; i < 5; i ++)
     {
         v_s[i] = normalize(u_lights[i].position - position);  
         vec4 v = normalize(u_eye_pos - position);             
