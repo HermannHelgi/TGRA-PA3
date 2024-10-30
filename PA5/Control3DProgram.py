@@ -10,6 +10,8 @@ from Shaders import *
 from Matrices import *
 import ojb_3D_loading as obj_3D_loading
 
+from client import Client
+
 class GraphicsProgram3D:
     def __init__(self):
         # WINDOW VARIABLES AND INITIALIZATION #
@@ -53,6 +55,7 @@ class GraphicsProgram3D:
         self.boxes = []
         self.cubes = []
         self.spheres = []
+        self.players = []
         self.coffee_locations = []
         self.coffee_range = 0.5
         self.coffees_collected = 0
@@ -103,6 +106,9 @@ class GraphicsProgram3D:
 
         # Sphere zone
         self.light_rotate_point_box = [2,5,25] #Note hardcoded value
+
+        # Network stuffs
+        #self.net = Client()
 
     def update(self):
         """
@@ -244,13 +250,24 @@ class GraphicsProgram3D:
                         self.rotate_right_key_down = False
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = False
-
             
+            #print(self.send_data())
+
             self.update()
             self.display()
 
         #OUT OF GAME LOOP
         pygame.quit()
+   
+   
+    def send_data(self):
+
+        data = "Hello server this is player:" + self.net.id
+        reply = self.net.send(data)
+        return reply
+
+
+        
 
     def MakeCube(self,
                   translation_x=0, 
@@ -523,11 +540,11 @@ class GraphicsProgram3D:
         self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
 
         #Spheare zone
-        self.MakeLight(20,3,20, 1,1,1, 1,1,1, 1,1,1)
+        self.MakeLight(20,3,20, 1,1,1, 0,1,1, 1,1,1)
 
         self.MakeSphere(-5,2,13, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
         self.MakeSphere(-9,6.7,17, 2,2,2, 1,0.5,0 ,0.7,0,0.3, 0,0,0.9, 10)
-        self.MakeSphere(5,-2,26, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
+        self.MakeSphere(5,-2,26, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,1, 25)
         self.MakeSphere(-4,13,26, 1,1,1, 0.05,0,0.8 ,0.5,0.2,0.3, 0.1,0,0.9, 20)
         self.MakeSphere(-4,2,26, 1,1,1, 0.5,1,0.8 ,0.5,1,0.3, 0.1,1,0.9, 20)
         self.MakeCube(14,2,-28, 2,2,2, 1,1,1, 1,1,1, 1,1,1, 10)
