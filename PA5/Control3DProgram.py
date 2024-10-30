@@ -15,8 +15,6 @@ class GraphicsProgram3D:
         # WINDOW VARIABLES AND INITIALIZATION #
         self.screenWidth = 800
         self.screenHeight = 600
-        self.mini_map_screenWidth = 200
-        self.mini_map_screenHeight = 150
 
         pygame.init() 
         pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.OPENGL|pygame.DOUBLEBUF)
@@ -28,17 +26,11 @@ class GraphicsProgram3D:
 
         self.view_matrix = ViewMatrix()
         self.view_matrix.look(Point(3, 3, 3), Point(2, 3, 2), Vector(0, 1, 0)) 
-
-        self.mini_map_view = ViewMatrix()
-        self.mini_map_view.look(Point(3, 10, 3), Point(2.999, 1, 2.999), Vector(0, 1, 0)) 
-        self.mini_map_view.rotate_on_floor(-45)
-
         # IF LOOK IS CHANGED, REMEMBER TO SET THE SELF.CURRENT_PITCH WITHIN MATRICES.PY TO MATCH, OTHERWISE PITCH WILL BE WEIRD
 
         self.projection_matrix = ProjectionMatrix()
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 40)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
-
 
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
@@ -61,10 +53,6 @@ class GraphicsProgram3D:
         self.coffee_locations.append([9, -25])
         self.lights = []
         
-        self.mini_map_lights = []
-        self.mini_map_light = Light()
-
-        self.minimap_indicator = Sphere()
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
@@ -108,23 +96,18 @@ class GraphicsProgram3D:
         """
         Updates the game.
         """
-        
         delta_time = self.clock.tick() / 1000.0
         coffee_to_remove = -1
 
         #Controls
         if (self.forwards_key_down):
             coffee_to_remove = self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
-            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.backwards_key_down):
             coffee_to_remove = self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
-            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.left_key_down):
             coffee_to_remove = self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
-            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.right_key_down):
             coffee_to_remove = self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
-            self.mini_map_view.copy_coords(self.view_matrix)
         if (self.rotate_right_key_down):
             self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
         if (self.rotate_left_key_down):
@@ -164,22 +147,6 @@ class GraphicsProgram3D:
         self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
-
-        # MINI MAP
-        glViewport(self.screenWidth - self.mini_map_screenWidth, self.screenHeight - self.mini_map_screenHeight, self.mini_map_screenWidth, self.mini_map_screenHeight)
-        glEnable(GL_SCISSOR_TEST)
-
-        glScissor(self.screenWidth - self.mini_map_screenWidth,self.screenHeight - self.mini_map_screenHeight,self.mini_map_screenWidth,self.mini_map_screenHeight)
-        glClearColor(0.5, 0.5, 0.5, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-        self.shader.set_view_matrix(self.mini_map_view.get_matrix()) # New View Matrix each frame, important
-        self.model_matrix.load_identity()
-        self.DrawPlayerIndicator()
-        self.DrawSpheres()
-        self.DrawCubes()
-        self.DrawLoadedObjects()
-
-        glDisable(GL_SCISSOR_TEST)
 
         pygame.display.flip()
 
@@ -440,27 +407,6 @@ class GraphicsProgram3D:
             cube.draw(self.shader)
 
             self.model_matrix.pop_matrix()
-
-    def DrawPlayerIndicator(self):
-        """
-        Draws the red circle indicator on the minimap to indicate the player.
-        """
-        self.DrawLights() #Make sure the light is correct for the indicator
-
-        self.shader.set_material_shininess(10)
-        self.shader.set_material_diffuse(1, 0 ,0)
-        self.shader.set_material_specular(1, 0 ,0)
-        self.shader.set_material_ambient(1, 0 ,0) 
-        self.model_matrix.push_matrix()
-        
-        self.model_matrix.add_translation(self.view_matrix.eye.x, self.view_matrix.eye.y + 2, self.view_matrix.eye.z)
-        scale = 0.4
-        self.model_matrix.add_scale(scale, scale, scale)
-        self.shader.set_model_matrix(self.model_matrix.matrix)
-
-        self.minimap_indicator.draw(self.shader)
-
-        self.model_matrix.pop_matrix()
 
     def rotate_light(self,light_1:Light,light_sphere:Sphere,light_2:Light,light_box:Cube):
         """
