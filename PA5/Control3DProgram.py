@@ -25,11 +25,11 @@ class GraphicsProgram3D:
         self.model_matrix = ModelMatrix()
 
         self.view_matrix = ViewMatrix()
-        self.view_matrix.look(Point(3, 3, 3), Point(2, 3, 2), Vector(0, 1, 0)) 
+        self.view_matrix.look(Point(4, 3, 4), Point(5, 3, 5), Vector(0, 1, 0)) 
         # IF LOOK IS CHANGED, REMEMBER TO SET THE SELF.CURRENT_PITCH WITHIN MATRICES.PY TO MATCH, OTHERWISE PITCH WILL BE WEIRD
 
         self.projection_matrix = ProjectionMatrix()
-        self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 40)
+        self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 60)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         # EDITOR & SPEED VARIABLES # 
@@ -83,14 +83,12 @@ class GraphicsProgram3D:
         self.invisible_box_padding = 0.7 # Padding on AABB
 
         self.light_pos = [0,0,0]
-        self.angle = 0
 
-        # Used to rotate the light around the maze
-        self.light_rotate_angle = 0 
-        self.light_rotate_point = [2,5,-15] #Note hardcoded value
-
-        # Sphere zone
-        self.light_rotate_point_box = [2,5,25] #Note hardcoded value
+        # Used to rotate objects around the maze
+        # Their indexes are, 0: Index of sphere/light, 1: Center X, 2: Center Z, 3: Angular speed, 4: current angle of rotation.
+        # For spheres, Center X and Z can be another sphere for "orbits". Simply give that sphere in the the self.spheres list instead. Such as self.spheres[3]
+        self.sphere_rotation_array=[]
+        self.light_rotation_array=[]
 
     def update(self):
         """
@@ -128,8 +126,16 @@ class GraphicsProgram3D:
             self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         #Rotating the light within the sceene
-        self.light_rotate_angle += 2*delta_time
-        self.rotate_light(self.lights[1],self.spheres[1],self.lights[-1],self.cubes[-1])
+
+        for i in range(self.light_rotation_array.__len__()):
+            self.light_rotation_array[i][-1] += self.light_rotation_array[i][-2] * delta_time
+            self.light_rotation_array[i][-1] %= 2 * math.pi
+            self.rotate_light(self.light_rotation_array[i])
+        
+        for i in range(self.sphere_rotation_array.__len__()):
+            self.sphere_rotation_array[i][-1] += self.sphere_rotation_array[i][-2] * delta_time
+            self.sphere_rotation_array[i][-1] %= 2 * math.pi
+            self.rotate_sphere(self.sphere_rotation_array[i])
 
     def display(self):
         """
@@ -408,75 +414,90 @@ class GraphicsProgram3D:
 
             self.model_matrix.pop_matrix()
 
-    def rotate_light(self,light_1:Light,light_sphere:Sphere,light_2:Light,light_box:Cube):
+    def rotate_sphere(self, sphere_arr):
         """
         Rotates the lights in the scene.
         """
-        #Around the maze
-        light_1.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
-        light_1.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
-        light_sphere.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point[0]
-        light_sphere.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point[2]
 
-        #Around the sphere zone
-        light_2.position[0] = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
-        light_2.position[2] = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
-        light_box.trans_x = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[0]
-        light_box.trans_y = 10*cos(self.light_rotate_angle) + self.light_rotate_point_box[1]
-        light_box.trans_z = 10*sin(self.light_rotate_angle) + self.light_rotate_point_box[2]
+        if (isinstance(sphere_arr[1], Sphere)):
+            sphere_x = sphere_arr[1].trans_x + sphere_arr[3] * math.cos(sphere_arr[-1]) 
+            sphere_z = sphere_arr[2].trans_z + sphere_arr[3] * math.sin(sphere_arr[-1]) 
+        else:
+            sphere_x = sphere_arr[1] + sphere_arr[3] * math.cos(sphere_arr[-1]) 
+            sphere_z = sphere_arr[2] + sphere_arr[3] * math.sin(sphere_arr[-1]) 
 
-        
+        self.spheres[sphere_arr[0]].trans_x = sphere_x
+        self.spheres[sphere_arr[0]].trans_z = sphere_z
+
+    def rotate_light(self, light_arr):
+        """
+        Rotates the lights in the scene.
+        """
+        sphere_x = light_arr[1] + light_arr[3] * math.cos(light_arr[-1]) 
+        sphere_z = light_arr[2] + light_arr[3] * math.sin(light_arr[-1]) 
+
+        self.lights[light_arr[0]].position[0] = sphere_x
+        self.lights[light_arr[0]].position[2] = sphere_z
 
     def start(self):
         """
         Pre-initialization of game. Creating all the lights, cubes and spheres.
         """
+        # Maze
+        height = 6
+        center_height = height / 2
+        self.MakeCube(30, center_height, 1.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 58.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(1.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(58.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
 
-        #MakeCube/MakeSphere (Translation, scale, diffuse, specular, ambiance, shine)
+        self.MakeCube(30, center_height, 10.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 49.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(10.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(49.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
 
+        self.MakeCube(30, center_height, 15,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 45,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
 
-        #Sun
-        self.MakeLight(-30,-10,10, 1,0,0, 1,0,0, 1,0,0) 
-        self.MakeSphere(-30,-10,10, 5,5,5, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
+        self.MakeCube(15, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(45, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
 
-        #Maze rotate light
-        self.MakeLight(10,5,-20, 0,1,0, 0,1,0, 0,1,0)
-        self.MakeSphere(10,5,-20, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeCube(24, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(24, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(36, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(36, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
 
-        self.MakeSphere(-8,2,6, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
-        self.MakeCube(-6,1,4, 2,2,2, 0,0.9,0.4, 0,24,0.5, 0,0.5,0, 13)
-        
-        #Maze
-        self.MakeCube(-5,2,-0.9, 12,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(4,2,-3, 1,1.5,5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(9.5,2,-1, 10,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(2,2,-5, 4,1.5,1, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(-4,2,-8, 2,1.5,15, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(-3,2,-10, 5,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(3,2,-10, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(-10,2,-15.5, 1,1.5,30, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(-2,2,-19, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(1.5,2,-17, 2,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(-6,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(4,2,-26, 7,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(2.5,2,-30, 24,1.5,1.5, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(11,2,-22, 1,1.5,10, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(9,2,-22, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(13,2,-26, 4,1.5,2, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(14,2,-11, 1,1.5,20, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(7,2,-15, 1,1.5,22, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(10,2,-13, 1,1.5,18, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
-        self.MakeCube(14,2,-28, 1,1.5,4, 0,0.3,1, 1,1,1, 0.001,0,0, 10)
+        # Lights
+        self.MakeLight(6,10,6, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
+        self.MakeSphere(6,10,6, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeLight(6,10,54, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
+        self.MakeSphere(6,10,54, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
 
-        #Spheare zone
-        self.MakeLight(20,3,20, 1,1,1, 1,1,1, 1,1,1)
+        self.MakeLight(30,10,30, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0) # center light
+        self.light_rotation_array.append([2, 30, 30, 8, (2 * math.pi / 5), 0.0])
+        self.MakeSphere(30,10,30, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.sphere_rotation_array.append([2, 30, 30, 8, (2 * math.pi / 5), 0.0])
 
-        self.MakeSphere(-5,2,13, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
-        self.MakeSphere(-9,6.7,17, 2,2,2, 1,0.5,0 ,0.7,0,0.3, 0,0,0.9, 10)
-        self.MakeSphere(5,-2,26, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
-        self.MakeSphere(-4,13,26, 1,1,1, 0.05,0,0.8 ,0.5,0.2,0.3, 0.1,0,0.9, 20)
-        self.MakeSphere(-4,2,26, 1,1,1, 0.5,1,0.8 ,0.5,1,0.3, 0.1,1,0.9, 20)
-        self.MakeCube(14,2,-28, 2,2,2, 1,1,1, 1,1,1, 1,1,1, 10)
+        self.MakeLight(54,10,6, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
+        self.MakeSphere(54,10,6, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeLight(54,10,54, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
+        self.MakeSphere(54,10,54, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+
+        # Planets
+        self.MakeSphere(25,24,23, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)
+        self.sphere_rotation_array.append([5, 30, 30, 11, (2 * math.pi / 7), 0.0])
+        self.MakeSphere(21,26.7,27, 2,2,2, 1,0.5,0 ,0.7,0,0.3, 0,0,0.9, 10)
+        self.sphere_rotation_array.append([6, 30, 30, 15, (2 * math.pi / 10), 0.5])
+
+        self.MakeSphere(26,28,36, 1,1,1, 0.05,0,0.8 ,0.5,0.2,0.3, 0.1,0,0.9, 20)
+        self.sphere_rotation_array.append([7, self.spheres[6], self.spheres[6], 4, (2 * math.pi / 8), 0.0])
+        self.MakeSphere(26,21,36, 1,1,1, 0,1,0.2 ,0.5,1,0.3, 0.1,1,0.9, 20)
+        self.sphere_rotation_array.append([8, 30, 30, 8, (2 * math.pi / 4), 0.0])
+
+        self.MakeSphere(30,28,30, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
+
+        # Sun
+        self.MakeSphere(50,30,10, 8,8,8, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
 
         self.program_loop()
 

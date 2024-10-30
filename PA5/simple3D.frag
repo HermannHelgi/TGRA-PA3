@@ -12,7 +12,7 @@ struct Light {
     vec4 ambient;
 };
 
-uniform Light u_lights[3];  // Light array
+uniform Light u_lights[5];  // Light array
 uniform vec4 u_eye_pos;     // Camera position in world space
 
 uniform vec4 u_material_specular;
@@ -30,7 +30,7 @@ void main(void)
     vec4 finalColor = vec4(0.0);
 
     // Loop through each light source and calculate Phong lighting
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
         // Calculate the light direction, view direction, and halfway vector
         vec3 lightDir = normalize(u_lights[i].position.xyz - v_frag_pos);
         vec3 viewDir = normalize(u_eye_pos.xyz - v_frag_pos);
