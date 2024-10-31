@@ -59,8 +59,7 @@ class GraphicsProgram3D:
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
-        # LEGACY DO NOT REMOVE THO!!!!!!
-        # self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", '14039_To_go_coffee_cup_with_lid_v1_L3.obj')
+        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", 'Satellite.obj')
         
         # Movement presets.
         self.pitchUpKey = K_UP
@@ -160,9 +159,7 @@ class GraphicsProgram3D:
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
         self.model_matrix.load_identity()
         
-        # LEGACY, DO NOT REMOVE THO!!!!
-        # self.DrawLoadedObjects()
-
+        self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
         self.DrawPlayers()
@@ -222,7 +219,6 @@ class GraphicsProgram3D:
             
             self.server_game_state = json.loads(self.send_data())
             self.add_player_to_world()
-
 
             self.update()
             self.display()
@@ -405,23 +401,17 @@ class GraphicsProgram3D:
         """
         Draws all loaded 3D object files.
         """
-        # LEGACY; WILL HAVE TO CHANGE
-        for coffee_cup in self.coffee_locations:
-            self.DrawLights()
-            
-            self.shader.set_material_shininess(13)
-            self.shader.set_material_diffuse(1,0, 0)
-            self.shader.set_material_specular(1,1,1)
-            self.shader.set_material_ambient(1,0,0)
-            
-            self.model_matrix.push_matrix()
-            self.model_matrix.add_translation(coffee_cup[0], 1.5, coffee_cup[1])
-            self.model_matrix.add_rotation_x(-90)
-            self.model_matrix.add_scale(0.2, 0.2, 0.2)
-            self.shader.set_model_matrix(self.model_matrix.matrix)
-            self.obj_model.draw(self.shader)
+        self.DrawLights()
+        
+        self.model_matrix.push_matrix()
+        self.model_matrix.add_translation(15, 15, 40)
+        self.model_matrix.add_rotation_y(45)
+        self.model_matrix.add_rotation_z(30)
+        self.model_matrix.add_scale(1, 1, 1)
+        self.shader.set_model_matrix(self.model_matrix.matrix)
+        self.obj_model.draw(self.shader)
 
-            self.model_matrix.pop_matrix()
+        self.model_matrix.pop_matrix()
 
     def DrawSpheres(self):
         """
