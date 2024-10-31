@@ -21,6 +21,8 @@ class GraphicsProgram3D:
 
         pygame.init() 
         pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.OPENGL|pygame.DOUBLEBUF)
+        pygame.mouse.set_visible(False)
+        pygame.event.set_grab(True)
 
         self.shader = Shader3D()
         self.shader.use()
@@ -41,8 +43,11 @@ class GraphicsProgram3D:
         self.walkingSpeed = self.movementSpeed
         self.sprintspeed = 6
 
-        self.rotationSpeed = 120
-        self.pitchSpeed = 60
+
+        self.mouseSensitivity = 0.1
+        self.yawAmount = 0
+        self.pitchAmount = 0
+
 
         # INTERNAL VARIABLES #
         self.boxes = []
@@ -68,11 +73,6 @@ class GraphicsProgram3D:
         self.leftWalkKey = K_a
         self.rightWalkKey = K_d
         self.sprintKey = K_LSHIFT
-
-        self.pitch_up_key_down = False  
-        self.pitch_down_key_down = False  
-        self.rotate_right_key_down = False
-        self.rotate_left_key_down = False
 
         self.forwards_key_down = False
         self.left_key_down = False
@@ -180,22 +180,24 @@ class GraphicsProgram3D:
         exiting = False
 
         while not exiting:
+
+            #Mouse movement
+            mouseX, mouseY = pygame.mouse.get_rel()
+            self.yawAmount = mouseX
+            self.pitchAmount = -mouseY
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     print("Quitting.")
                     exiting = True
+                
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == K_ESCAPE:
                         print("Escaping!")
                         exiting = True
-                    #Pitch (Up - Down)
-                    if event.key == self.pitchUpKey:
-                        self.pitch_up_key_down = True
-                    elif event.key == self.pitchDownKey:
-                        self.pitch_down_key_down = True
                     #Movement
-                    elif event.key == self.forwardsKey:
+                    if event.key == self.forwardsKey:
                         self.forwards_key_down = True
                     elif event.key == self.leftWalkKey:
                         self.left_key_down = True
@@ -205,21 +207,13 @@ class GraphicsProgram3D:
                         self.right_key_down = True
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.sprintspeed
-                    #Rotation (Left - Right)
-                    elif event.key == self.rotateRightKey:
-                        self.rotate_right_key_down = True
-                    elif event.key == self.rotateLeftKey:
-                        self.rotate_left_key_down = True
 
+                
 
                 elif event.type == pygame.KEYUP:
-                    #Pitch (Up - Down)
-                    if event.key == self.pitchUpKey:
-                        self.pitch_up_key_down = False
-                    elif event.key == self.pitchDownKey:
-                        self.pitch_down_key_down = False
+
                     #Movement
-                    elif event.key == self.forwardsKey:
+                    if event.key == self.forwardsKey:
                         self.forwards_key_down = False
                     elif event.key == self.leftWalkKey:
                         self.left_key_down = False
@@ -229,11 +223,6 @@ class GraphicsProgram3D:
                         self.right_key_down = False
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.walkingSpeed
-                    #Rotation (Left - Right)    
-                    elif event.key == self.rotateRightKey:
-                        self.rotate_right_key_down = False
-                    elif event.key == self.rotateLeftKey:
-                        self.rotate_left_key_down = False
             
             self.server_game_state = json.loads(self.send_data())
             self.add_player_to_world()
@@ -598,6 +587,7 @@ class GraphicsProgram3D:
 
         # Sun
         self.MakeSphere(50,30,10, 8,8,8, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
+
 
         self.program_loop()
 
