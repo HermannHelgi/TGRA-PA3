@@ -103,6 +103,8 @@ class GraphicsProgram3D:
         Updates the game.
         """
         delta_time = self.clock.tick() / 1000.0
+        fps = 1.0 / delta_time
+        print(f"FPS: {fps:.2f}")
         coffee_to_remove = -1
 
         #Controls
