@@ -176,7 +176,6 @@ class ViewMatrix:
         """
         Rotates the camera, similar to yaw, but won't make the camera spin into the ground.
         """
-        angle = self.degrees_to_radians(angle)
         temp = cos(angle) * self.u.x + sin(angle) * self.u.z
         self.u.z = cos(angle) * self.u.z - sin(angle) * self.u.x
         self.u.x = temp
@@ -193,7 +192,6 @@ class ViewMatrix:
         """
         Changes the pitch of the camera.
         """
-        angle = self.degrees_to_radians(angle)
         new_pitch = self.current_pitch + angle
 
         if new_pitch > self.max_pitch:
