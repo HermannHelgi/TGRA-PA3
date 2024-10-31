@@ -124,14 +124,10 @@ class GraphicsProgram3D:
             self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
         if (self.right_key_down):
             self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
-        if (self.rotate_right_key_down):
-            self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
-        if (self.rotate_left_key_down):
-            self.view_matrix.rotate_on_floor(self.rotationSpeed * delta_time)
-        if (self.pitch_up_key_down):
-            self.view_matrix.pitch(self.pitchSpeed * delta_time)
-        if (self.pitch_down_key_down):
-            self.view_matrix.pitch(-self.pitchSpeed * delta_time)
+        if (self.yawAmount != 0):
+            self.view_matrix.rotate_on_floor(-(self.yawAmount * self.mouseSensitivity) * delta_time)
+        if (self.pitchAmount != 0):
+            self.view_matrix.pitch((self.pitchAmount * self.mouseSensitivity) * delta_time)
 
         #Rotating the light within the sceene
 
