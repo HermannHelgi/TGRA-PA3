@@ -138,7 +138,7 @@ class Cube:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
 class Sphere:
-    def __init__(self,stacks = 12, slices = 23):
+    def __init__(self, textures=False, stacks = 12, slices = 23):
 
         self.trans_x = 0
         self.trans_y = 0
@@ -148,6 +148,10 @@ class Sphere:
         self.scale_y = 0
         self.scale_z = 0
         
+        self.rotate_x = 0
+        self.rotate_y = 0
+        self.rotate_z = 0
+
         self.specular_r = 0
         self.specular_g = 0
         self.specular_b = 0
@@ -158,6 +162,8 @@ class Sphere:
         self.ambient_g = 0
         self.ambient_b = 0
         self.shine = 0
+
+        self.texture = textures
 
         vertex_array = []
         self.slices = slices
@@ -176,10 +182,18 @@ class Sphere:
                     vertex_array.append(cos(stack_angle))
                     vertex_array.append(sin(stack_angle) * sin(slice_angle))
 
+                if (textures):
+                    vertex_array.append(slice_count / slices)
+                    vertex_array.append(stack_count / stacks)
+
                 for _ in range(2):
                     vertex_array.append(sin(stack_angle + stack_interval) * cos(slice_angle))
                     vertex_array.append(cos(stack_angle + stack_interval))
                     vertex_array.append(sin(stack_angle + stack_interval) * sin(slice_angle))
+
+                if (textures):
+                    vertex_array.append(slice_count / slices)
+                    vertex_array.append((stack_count + 1 )/ stacks)
 
                 self.vertex_count += 2
             
@@ -188,8 +202,12 @@ class Sphere:
         glBufferData(GL_ARRAY_BUFFER, numpy.array(vertex_array, dtype='float32'), GL_STATIC_DRAW)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-    def draw(self,shader):
-        shader.set_attribute_buffers(self.vertex_buffer_id)
+    def draw(self, shader):
+        if (self.texture):
+            shader.set_attribute_buffers_with_uv(self.vertex_buffer_id)
+        else:
+            shader.set_attribute_buffers(self.vertex_buffer_id)
+
         for i in range(0,self.vertex_count,(self.slices +1 ) * 2):
             glDrawArrays(GL_TRIANGLE_STRIP,i,(self.slices + 1) * 2)
         glBindVertexArray(0)

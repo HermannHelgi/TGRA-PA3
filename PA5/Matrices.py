@@ -122,7 +122,7 @@ class ViewMatrix:
         self.max_pitch = math.radians(90)
         self.min_pitch = math.radians(-90)
 
-    def slide(self, del_u, del_v, del_n, canFly, arr=[], coffee=[], coffee_range=0):
+    def slide(self, del_u, del_v, del_n, canFly, arr=[]):
         """
         Slides the camera around as specified, also checks for collisions with any entity after movement.
         Collision system is based on AABB. (Axis-Aligned Bounded Box)
@@ -145,16 +145,9 @@ class ViewMatrix:
                     if hit_z >= 0:
                         self.eye.z = clamp_z
 
-        coffee_to_remove = -1
-        for index, coffee_cup in enumerate(coffee): # Checking for coffee collision.
-            if (sqrt((coffee_cup[0] - self.eye.x) ** 2 + (coffee_cup[1] - self.eye.z) ** 2) < coffee_range):
-                coffee_to_remove = index
-
         if (canFly):
             self.eye.y += self.u.y * del_u + self.v.y * del_v + self.norm_vector.y * del_n
         
-        return coffee_to_remove
-
     def check_hit_and_clamp(self, old_pos, new_pos, min_bound, max_bound):
         """
         Collision function, checks some local box in what way the player has collided with it.

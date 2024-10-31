@@ -49,18 +49,13 @@ class GraphicsProgram3D:
         self.cubes = []
         self.spheres = []
         self.players = []
-        self.coffee_locations = []
-        self.coffee_range = 0.5
-        self.coffees_collected = 0
-        self.coffee_locations.append([-7, -5])
-        self.coffee_locations.append([11, -15])
-        self.coffee_locations.append([9, -25])
         self.lights = []
         
         self.clock = pygame.time.Clock()
         self.clock.tick()
 
-        self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", '14039_To_go_coffee_cup_with_lid_v1_L3.obj')
+        # LEGACY DO NOT REMOVE THO!!!!!!
+        # self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", '14039_To_go_coffee_cup_with_lid_v1_L3.obj')
         
         # Movement presets.
         self.pitchUpKey = K_UP
@@ -87,6 +82,9 @@ class GraphicsProgram3D:
         self.invisible_box_padding = 0.7 # Padding on AABB
 
         self.light_pos = [0,0,0]
+
+        self.spinning_spheres = []
+
         # Used to rotate objects around the maze
         # Their indexes are, 0: Index of sphere/light, 1: Center X, 2: Center Z, 3: Angular speed, 4: current angle of rotation.
         # For spheres, Center X and Z can be another sphere for "orbits". Simply give that sphere in the the self.spheres list instead. Such as self.spheres[3]
@@ -97,25 +95,35 @@ class GraphicsProgram3D:
         self.net = Client()
         self.server_game_state = {}
 
+        self.tex_id1 = self.LoadTexture("/textures/JUPI.jpg")
+
+    def LoadTexture(self, stringpath):
+        surface = pygame.image.load(sys.path[0] + stringpath) 
+        tex_String = pygame.image.tostring(surface, "RGBA", 1)
+        width = surface.get_width()
+        height = surface.get_height()
+        tex_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_String)
+        return tex_id
 
     def update(self):
         """
         Updates the game.
         """
         delta_time = self.clock.tick() / 1000.0
-        fps = 1.0 / delta_time
-        print(f"FPS: {fps:.2f}")
-        coffee_to_remove = -1
 
         #Controls
         if (self.forwards_key_down):
-            coffee_to_remove = self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
+            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
         if (self.backwards_key_down):
-            coffee_to_remove = self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
+            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes)
         if (self.left_key_down):
-            coffee_to_remove = self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
+            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
         if (self.right_key_down):
-            coffee_to_remove = self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes, self.coffee_locations, self.coffee_range)
+            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
         if (self.rotate_right_key_down):
             self.view_matrix.rotate_on_floor(-self.rotationSpeed * delta_time)
         if (self.rotate_left_key_down):
@@ -124,16 +132,6 @@ class GraphicsProgram3D:
             self.view_matrix.pitch(self.pitchSpeed * delta_time)
         if (self.pitch_down_key_down):
             self.view_matrix.pitch(-self.pitchSpeed * delta_time)
-        
-        #Coffe power up
-        if (coffee_to_remove != -1):
-            self.coffee_locations.pop(coffee_to_remove)
-            self.coffees_collected += 1
-            self.walkingSpeed += 2
-            self.movementSpeed += 2
-            self.sprintspeed += 2
-            self.projection_matrix.set_perspective(60, (self.screenWidth + 100 * self.coffees_collected)/(self.screenHeight), 0.5, 40)
-            self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
         #Rotating the light within the sceene
 
@@ -146,6 +144,10 @@ class GraphicsProgram3D:
             self.sphere_rotation_array[i][-1] += self.sphere_rotation_array[i][-2] * delta_time
             self.sphere_rotation_array[i][-1] %= 2 * math.pi
             self.rotate_sphere(self.sphere_rotation_array[i])
+
+        for elem in self.spinning_spheres:
+            self.spheres[elem].rotate_y += 30 * delta_time
+
         self.update_player_positions()
 
     def display(self):
@@ -161,7 +163,10 @@ class GraphicsProgram3D:
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
         self.model_matrix.load_identity()
-        self.DrawLoadedObjects()
+        
+        # LEGACY, DO NOT REMOVE THO!!!!
+        # self.DrawLoadedObjects()
+
         self.DrawCubes()
         self.DrawSpheres()
         self.DrawPlayers()
@@ -341,19 +346,30 @@ class GraphicsProgram3D:
                   ambient_r = 0,
                   ambient_g = 0,
                   ambient_b = 0,
-                  shine = 0
+                  shine = 0,
+                  texture = False,
+
+                  rotation_x=0,
+                  rotation_y=0,
+                  rotation_z=0
                   
                   ):
         """
         Makes a new sphere and adds it to list of spheres within the game
         """
-        new_sphere = Sphere()
+        if (texture):
+            new_sphere = Sphere(True)
+        else:
+            new_sphere = Sphere()
         new_sphere.trans_x = translation_x
         new_sphere.trans_y = translation_y
         new_sphere.trans_z = translation_z
         new_sphere.scale_x = scale_x
         new_sphere.scale_y = scale_y
         new_sphere.scale_z = scale_z
+        new_sphere.rotate_x = rotation_x
+        new_sphere.rotate_y = rotation_y
+        new_sphere.rotate_z = rotation_z
         new_sphere.diffuse_r = diffuse_r
         new_sphere.diffuse_g = diffuse_g
         new_sphere.diffuse_b = diffuse_b
@@ -404,6 +420,7 @@ class GraphicsProgram3D:
         """
         Draws all loaded 3D object files.
         """
+        # LEGACY; WILL HAVE TO CHANGE
         for coffee_cup in self.coffee_locations:
             self.DrawLights()
             
@@ -427,16 +444,25 @@ class GraphicsProgram3D:
         """
         for sphere in self.spheres:
             self.DrawLights() #Need to calculate the lights for each object
+            self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
+
+            if (sphere.texture):
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.tex_id1)
+                self.shader.set_tex_diffuse(0)
 
             self.shader.set_material_shininess(sphere.shine)
-            self.shader.set_material_diffuse(sphere.diffuse_r,sphere.diffuse_g, sphere.diffuse_b)
             self.shader.set_material_specular(sphere.specular_r,sphere.specular_g,sphere.specular_b)
             self.shader.set_material_ambient(sphere.ambient_r,sphere.ambient_g,sphere.ambient_b) #The natural color of the meterial
-            
+                
             self.model_matrix.push_matrix()
             self.model_matrix.add_translation(sphere.trans_x,sphere.trans_y,sphere.trans_z)
+            self.model_matrix.add_rotation_x(sphere.rotate_x)
+            self.model_matrix.add_rotation_y(sphere.rotate_y)
+            self.model_matrix.add_rotation_z(sphere.rotate_z)
             self.model_matrix.add_scale(sphere.scale_x,sphere.scale_y,sphere.scale_z)
             self.shader.set_model_matrix(self.model_matrix.matrix)
+
             sphere.draw(self.shader)
 
             self.model_matrix.pop_matrix()
@@ -468,7 +494,6 @@ class GraphicsProgram3D:
             self.model_matrix.pop_matrix()
 
     def DrawPlayers(self):
-
         if len(self.players) > 0:
             for player in self.players:
                 if player["ID"] != self.net.id:
@@ -568,7 +593,8 @@ class GraphicsProgram3D:
         self.MakeSphere(26,21,36, 1,1,1, 0,1,0.2 ,0.5,1,0.3, 0.1,1,0.9, 20)
         self.sphere_rotation_array.append([8, 30, 30, 8, (2 * math.pi / 4), 0.0])
 
-        self.MakeSphere(30,28,30, 5,5,5, 0.9,0,0.5 ,1,0,1, 0,0,0, 25)
+        self.MakeSphere(30,28,30, 5,5,5, 1,1,1 ,1,1,1, 0,0,0, 25, True, 30, 0, 0)
+        self.spinning_spheres.append(9)
 
         # Sun
         self.MakeSphere(50,30,10, 8,8,8, 1,0.5,0 ,1,0.5,0, 1,0.3,0, 3)
