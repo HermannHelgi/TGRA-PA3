@@ -28,7 +28,8 @@ void main(void)
     vec4 finalColor = vec4(0.0);
 
     // Loop through each light source and calculate Phong lighting
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) 
+    {
     
         float lambert = max(dot(v_normal, (v_s[i])), 0.0);             
         float phong = max(dot(v_normal, (v_h[i])), 0.0);               
@@ -37,7 +38,8 @@ void main(void)
         vec4 diffuseColor = u_lights[i].diffuse * u_material_diffuse * lambert;
         vec4 specularColor = u_lights[i].specular * u_material_specular * pow(phong, u_shininess);
 
-        finalColor += (ambientColor + diffuseColor + specularColor);}
+        finalColor += (ambientColor + diffuseColor + specularColor);
+    }
 
     gl_FragColor = finalColor; // Output final color for the fragment
 }

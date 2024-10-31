@@ -1,11 +1,11 @@
 import socket
 from _thread import *
-
+import json
 
 s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
 server = 'localhost'
-port = 5555
+port = 4123
 
 
 try:
@@ -19,35 +19,44 @@ s.listen(2)
 print("Waiting for a connection")
     
 currentId = 0
-content = {
-    "players" : [],
-    "bullets" : []
+game_state = {
+    "PLAYERS" : [],
+    "BULLETS" : []
 }
+
+def parse_reply(reply:dict):
+    global game_state
+    if "PLAYER" in reply:
+        if len(game_state["PLAYERS"]) < int(reply["PLAYER"]["ID"])+1: #First time player says its position
+            game_state["PLAYERS"].append(reply["PLAYER"])
+        else:
+            game_state["PLAYERS"][int(reply["PLAYER"]["ID"])] = reply["PLAYER"]
+
+
 def threaded_client(conn):
-    global currentId, content
+    global currentId, game_state
     conn.send(str.encode(str(currentId)))
     currentId += 1
     reply = ''
     while True:
         try:
-            data = conn.recv(2048)
+            data = conn.recv(5000)
             reply = data.decode('utf-8')
             if not data:
                 conn.send(str.encode("Goodbye"))
                 break
             else:
-                print("Recieved: " + reply)
-                arr = reply.split(":")
-                id = arr[1]
+                reply = json.loads(reply)
+                parse_reply(reply)
 
-                reply = "Hello: " + str(id) + "this is server responding."
 
-                print("Sending: " + reply)
+                print("Sending: game_state" )
 
-            conn.sendall(str.encode(reply))
+            conn.sendall(str.encode(json.dumps(game_state)))
         except:
             break
 
+    #TODO remove the player from game_state
     print("Connection Closed")
     conn.close()
 

@@ -5,6 +5,7 @@ from pygame.locals import *
 
 import sys
 import time
+import json
 
 from Shaders import *
 from Matrices import *
@@ -93,7 +94,8 @@ class GraphicsProgram3D:
         self.light_rotation_array=[]
 
         # Network stuffs
-        #self.net = Client()
+        self.net = Client()
+        self.server_game_state = {}
 
 
     def update(self):
@@ -142,6 +144,7 @@ class GraphicsProgram3D:
             self.sphere_rotation_array[i][-1] += self.sphere_rotation_array[i][-2] * delta_time
             self.sphere_rotation_array[i][-1] %= 2 * math.pi
             self.rotate_sphere(self.sphere_rotation_array[i])
+        self.update_player_positions()
 
     def display(self):
         """
@@ -159,6 +162,7 @@ class GraphicsProgram3D:
         self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
+        self.DrawPlayers()
 
         pygame.display.flip()
 
@@ -224,7 +228,9 @@ class GraphicsProgram3D:
                     elif event.key == self.rotateLeftKey:
                         self.rotate_left_key_down = False
             
-            #print(self.send_data())
+            self.server_game_state = json.loads(self.send_data())
+            self.add_player_to_world()
+
 
             self.update()
             self.display()
@@ -232,10 +238,38 @@ class GraphicsProgram3D:
         #OUT OF GAME LOOP
         pygame.quit()
    
-   
-    def send_data(self):
 
-        data = "Hello server this is player:" + self.net.id
+    """This is for when a new player joins we only create it's model once"""
+    def add_player_to_world(self):
+        
+        if "PLAYERS" in self.server_game_state: #Just in case we havent recived any data yet
+            for player in self.server_game_state["PLAYERS"]:
+                if int(player["ID"])+1 > len(self.players):
+                    temp = player
+                    player_model = Sphere()
+                    player_model.scale_x = 1
+                    player_model.scale_y = 1
+                    player_model.scale_z = 1
+                    player_model.ambient_r = 1
+                    player_model.diffuse_r = 1
+                    player_model.trans_x = player["POSITION"][0]
+                    player_model.trans_y = player["POSITION"][1]-2
+                    player_model.trans_z = player["POSITION"][2]
+                    temp["MODEL"] = player_model
+
+                    self.players.append(temp)
+
+    def update_player_positions(self):
+        if "PLAYERS" in self.server_game_state: #Just in case we havent recived any data yet
+            for player in self.server_game_state["PLAYERS"]:
+                self.players[int(player["ID"])]["MODEL"].trans_x = player["POSITION"][0]
+                self.players[int(player["ID"])]["MODEL"].trans_y = player["POSITION"][1]-2
+                self.players[int(player["ID"])]["MODEL"].trans_z = player["POSITION"][2] 
+
+
+    def send_data(self):
+        data = {"PLAYER": {"ID": self.net.id, "POSITION": [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]}}
+        data = json.dumps(data)
         reply = self.net.send(data)
         return reply
 
@@ -430,6 +464,27 @@ class GraphicsProgram3D:
             cube.draw(self.shader)
 
             self.model_matrix.pop_matrix()
+
+    def DrawPlayers(self):
+
+        if len(self.players) > 0:
+            for player in self.players:
+                if player["ID"] != self.net.id:
+                    self.DrawLights() #Need to calculate the lights for each object
+
+                    self.shader.set_material_shininess(player["MODEL"].shine)
+                    self.shader.set_material_diffuse(player["MODEL"].diffuse_r,player["MODEL"].diffuse_g, player["MODEL"].diffuse_b)
+                    self.shader.set_material_specular(player["MODEL"].specular_r,player["MODEL"].specular_g,player["MODEL"].specular_b)
+                    self.shader.set_material_ambient(player["MODEL"].ambient_r,player["MODEL"].ambient_g,player["MODEL"].ambient_b) #The natural color of the meterial
+                    
+                    self.model_matrix.push_matrix()
+                    self.model_matrix.add_translation(player["MODEL"].trans_x,player["MODEL"].trans_y,player["MODEL"].trans_z)
+                    self.model_matrix.add_scale(player["MODEL"].scale_x,player["MODEL"].scale_y,player["MODEL"].scale_z)
+                    self.shader.set_model_matrix(self.model_matrix.matrix)
+                    player["MODEL"].draw(self.shader)
+                    self.model_matrix.pop_matrix()
+
+
 
     def rotate_sphere(self, sphere_arr):
         """
