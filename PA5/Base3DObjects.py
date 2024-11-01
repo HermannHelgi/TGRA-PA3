@@ -122,6 +122,9 @@ class Cube:
         self.ambient_r = 0
         self.ambient_g = 0
         self.ambient_b = 0
+        self.emission_r = 0
+        self.emission_g = 0
+        self.emission_b = 0
         self.shine = 0
 
         self.vertex_count = len(vertex_array) // 6

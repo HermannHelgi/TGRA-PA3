@@ -22,6 +22,7 @@ varying vec4 u_eye_pos;     // Camera position in world space
 uniform vec4 u_material_specular;
 uniform vec4 u_material_diffuse;
 uniform vec4 u_material_ambient;
+uniform vec4 u_material_emission;
 uniform float u_shininess;
 varying vec2 v_uv;
 
@@ -53,5 +54,5 @@ void main(void)
         finalColor += (ambientColor + diffuseColor + specularColor);
     }
 
-    gl_FragColor = finalColor; // Output final color for the fragment
+    gl_FragColor = finalColor + u_material_emission; // Output final color for the fragment
 }

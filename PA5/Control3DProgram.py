@@ -1,4 +1,5 @@
 from math import *
+from random import randint, seed
 
 import pygame
 from pygame.locals import *
@@ -16,6 +17,7 @@ from client import Client
 class GraphicsProgram3D:
     def __init__(self):
         # WINDOW VARIABLES AND INITIALIZATION #
+        seed() # For random spawns
         self.screenWidth = 800
         self.screenHeight = 600
 
@@ -29,9 +31,11 @@ class GraphicsProgram3D:
 
         self.model_matrix = ModelMatrix()
 
+        # Manually inputed coords for spawn locations, index 0-1 is the x and z of the spawn, index 2-3 is the x and z of the direction which the player will look towards.
+        self.spawn_locations = [[6, 6, 7, 7], [6, 54, 7, 53], [54, 6, 53, 7], [54, 54, 53, 53], [24, 15, 23, 16], [15, 24, 16, 23], [36, 15, 37, 16], [45, 24, 43, 23], [15, 36, 16, 37], [24, 45, 23, 44], [36, 45, 37, 44], [45, 36, 44, 37]]
+
         self.view_matrix = ViewMatrix()
-        self.view_matrix.look(Point(4, 3, 4), Point(5, 3, 5), Vector(0, 1, 0)) 
-        # IF LOOK IS CHANGED, REMEMBER TO SET THE SELF.CURRENT_PITCH WITHIN MATRICES.PY TO MATCH, OTHERWISE PITCH WILL BE WEIRD
+        random_spawn = self.randomize_spawn()
 
         self.projection_matrix = ProjectionMatrix()
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 60)
@@ -254,15 +258,16 @@ class GraphicsProgram3D:
                 self.players[int(player["ID"])]["MODEL"].trans_y = player["POSITION"][1]-2
                 self.players[int(player["ID"])]["MODEL"].trans_z = player["POSITION"][2] 
 
-
     def send_data(self):
         data = {"PLAYER": {"ID": self.net.id, "POSITION": [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]}}
         data = json.dumps(data)
         reply = self.net.send(data)
         return reply
 
-
-        
+    def randomize_spawn(self):
+        random_spawn = self.spawn_locations[randint(0, self.spawn_locations.__len__())]
+        self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
+        # If the Y value of the look() function is changed to not be the same, remember to change the current_pitch value to fit that.
 
     def MakeCube(self,
                   translation_x=0, 
@@ -332,7 +337,11 @@ class GraphicsProgram3D:
 
                   rotation_x=0,
                   rotation_y=0,
-                  rotation_z=0
+                  rotation_z=0,
+
+                  emission_r=0,
+                  emission_g=0,
+                  emission_b=0
                   
                   ):
         """
@@ -360,6 +369,9 @@ class GraphicsProgram3D:
         new_sphere.ambient_r = ambient_r
         new_sphere.ambient_g = ambient_g
         new_sphere.ambient_b = ambient_b
+        new_sphere.emission_r = emission_r
+        new_sphere.emission_g = emission_g
+        new_sphere.emission_b = emission_b
         new_sphere.shine = shine
         self.spheres.append(new_sphere)
 
@@ -429,7 +441,8 @@ class GraphicsProgram3D:
             self.shader.set_material_shininess(sphere.shine)
             self.shader.set_material_specular(sphere.specular_r,sphere.specular_g,sphere.specular_b)
             self.shader.set_material_ambient(sphere.ambient_r,sphere.ambient_g,sphere.ambient_b) #The natural color of the meterial
-                
+            self.shader.set_material_emission(sphere.emission_r,sphere.emission_g,sphere.emission_b)
+
             self.model_matrix.push_matrix()
             self.model_matrix.add_translation(sphere.trans_x,sphere.trans_y,sphere.trans_z)
             self.model_matrix.add_rotation_x(sphere.rotate_x)
@@ -486,8 +499,6 @@ class GraphicsProgram3D:
                     player["MODEL"].draw(self.shader)
                     self.model_matrix.pop_matrix()
 
-
-
     def rotate_sphere(self, sphere_arr):
         """
         Rotates the lights in the scene.
@@ -520,42 +531,44 @@ class GraphicsProgram3D:
         # Maze
         height = 6
         center_height = height / 2
-        self.MakeCube(30, center_height, 1.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(30, center_height, 58.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(1.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(58.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 1.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(30, center_height, 58.5,      60, height, 3,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(1.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(58.5, center_height, 30,      3, height, 54,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
 
-        self.MakeCube(30, center_height, 10.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(30, center_height, 49.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(10.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(49.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 10.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(30, center_height, 49.5,      42, height, 3,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(10.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(49.5, center_height, 30,      3, height, 30,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
 
-        self.MakeCube(30, center_height, 15,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(30, center_height, 45,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(30, center_height, 15,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(30, center_height, 45,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
 
-        self.MakeCube(15, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(45, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(15, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(45, center_height, 30,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
 
-        self.MakeCube(24, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(24, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(36, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
-        self.MakeCube(36, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0.001, 0, 0, 10)
+        self.MakeCube(24, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(24, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(36, center_height, 24,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
+        self.MakeCube(36, center_height, 36,      6, height, 6,     0, 0.3, 1,      1, 1, 1,        0, 0, 0, 10)
 
         # Lights
-        self.MakeLight(6,10,6, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
-        self.MakeSphere(6,10,6, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
-        self.MakeLight(6,10,54, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
-        self.MakeSphere(6,10,54, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeLight(6,10,6, 0.8,0.8,0.8, 0.2,0.2,0.2, 0,0,0)
+        self.MakeSphere(6,10,6, 1,1,1, 0,0,0 ,0,0,0, 1,1,1, 3, emission_r=1, emission_b=1, emission_g=1)
+        self.MakeLight(6,10,54, 0.8,0.8,0.8, 0.2,0.2,0.2, 0,0,0)
+        self.MakeSphere(6,10,54, 1,1,1, 0,0,0 ,0,0,0, 1,1,1, 3, emission_r=1, emission_b=1, emission_g=1)
 
-        self.MakeLight(30,10,30, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0) # center light
+        self.MakeLight(30,10,30, 0.8,0.8,0.8, 0.4,0.4,0.4, 0,0,0) # center light
         self.light_rotation_array.append([2, 30, 30, 8, (2 * math.pi / 5), 0.0])
-        self.MakeSphere(30,10,30, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeSphere(30,10,30, 1,1,1, 0,0,0 ,0,0,0, 1,1,1, 3, emission_r=1, emission_b=1, emission_g=1)
         self.sphere_rotation_array.append([2, 30, 30, 8, (2 * math.pi / 5), 0.0])
 
-        self.MakeLight(54,10,6, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
-        self.MakeSphere(54,10,6, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
-        self.MakeLight(54,10,54, 0.8,0.8,0.8, 0.8,0.8,0.8, 0,0,0)
-        self.MakeSphere(54,10,54, 1,1,1, 1,1,1 ,1,1,1, 1,1,1, 3)
+        self.MakeLight(54,10,6, 0.8,0.8,0.8, 0.2,0.2,0.2, 0,0,0)
+        self.MakeSphere(54,10,6, 1,1,1, 0,0,0 ,0,0,0, 1,1,1, 3, emission_r=1, emission_b=1, emission_g=1)
+        self.MakeLight(54,10,54, 0.8,0.8,0.8, 0.2,0.2,0.2, 0,0,0)
+        self.MakeSphere(54,10,54, 1,1,1, 0,0,0 ,0,0,0, 1,1,1, 3, emission_r=1, emission_b=1, emission_g=1)
+
+        self.MakeLight(30,10,30, 0,0,0, 0,0,0, 0,0,0)
 
         # Planets
         self.MakeSphere(25,24,23, 1,1,1, 1,0.5,1 ,0.7,0,0, 0,1,0.3, 25)

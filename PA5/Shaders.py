@@ -52,6 +52,7 @@ class Shader3D:
         self.matDifLoc = glGetUniformLocation(self.renderingProgramID,"u_material_diffuse")
         self.matSpecLoc = glGetUniformLocation(self.renderingProgramID,"u_material_specular")
         self.matAmbLoc = glGetUniformLocation(self.renderingProgramID,"u_material_ambient")
+        self.matEmiLoc = glGetUniformLocation(self.renderingProgramID,"u_material_emission")
         self.matShineLoc = glGetUniformLocation(self.renderingProgramID,"u_shininess")
 
         self.eyePosLoc = glGetUniformLocation(self.renderingProgramID,"u_eye_pos")
@@ -82,6 +83,8 @@ class Shader3D:
         glUniform4f(self.matSpecLoc,r,g,b,1.0)
     def set_material_ambient(self, r, g, b):
         glUniform4f(self.matAmbLoc,r,g,b,1.0)
+    def set_material_emission(self, r, g, b):
+        glUniform4f(self.matEmiLoc,r,g,b,1.0)
     def set_material_shininess(self, x):
         glUniform1f(self.matShineLoc,x)
 
