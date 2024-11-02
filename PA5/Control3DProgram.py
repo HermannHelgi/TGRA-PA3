@@ -1,4 +1,5 @@
 from math import *
+from random import *
 
 import pygame
 from pygame.locals import *
@@ -22,7 +23,7 @@ class GraphicsProgram3D:
         pygame.init() 
         pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.OPENGL|pygame.DOUBLEBUF)
         pygame.mouse.set_visible(False)
-        pygame.event.set_grab(True)
+        #pygame.event.set_grab(True)
 
         self.shader = Shader3D()
         self.shader.use()
@@ -53,7 +54,6 @@ class GraphicsProgram3D:
         self.boxes = []
         self.cubes = []
         self.spheres = []
-        self.players = []
         self.coffee_locations = []
         self.coffee_range = 0.5
         self.coffees_collected = 0
@@ -95,7 +95,8 @@ class GraphicsProgram3D:
 
         # Network stuffs
         self.net = Client()
-        self.server_game_state = {}
+        self.server_game_state = {"PLAYERS" : [],"BULLETS" : []} #This should be intialized the same way as the server
+
 
 
     def update(self):
@@ -217,7 +218,7 @@ class GraphicsProgram3D:
             
             self.server_game_state = json.loads(self.send_data())
             self.add_player_to_world()
-
+            self.add_bullets_to_world()
 
             self.update()
             self.display()
@@ -226,41 +227,57 @@ class GraphicsProgram3D:
         pygame.quit()
    
 
+    def add_bullets_to_world(self):
+        pass
+
     """This is for when a new player joins we only create it's model once"""
     def add_player_to_world(self):
-        
-        if "PLAYERS" in self.server_game_state: #Just in case we havent recived any data yet
-            for player in self.server_game_state["PLAYERS"]:
-                if int(player["ID"])+1 > len(self.players):
-                    temp = player
-                    player_model = Sphere()
-                    player_model.scale_x = 1
-                    player_model.scale_y = 1
-                    player_model.scale_z = 1
-                    player_model.ambient_r = 1
-                    player_model.diffuse_r = 1
-                    player_model.trans_x = player["POSITION"][0]
-                    player_model.trans_y = player["POSITION"][1]-2
-                    player_model.trans_z = player["POSITION"][2]
-                    temp["MODEL"] = player_model
+        for player_id,player_data in self.server_game_state["PLAYERS"].items():
+            if player_id != self.net.id:
+                player_model = Sphere()
+                player_model.scale_x = 1.5
+                player_model.scale_y = 3
+                player_model.scale_z = 1.5
 
-                    self.players.append(temp)
+                player_model.ambient_r = 0.1 + (player_data["COLOR"][0]/3)
+                player_model.ambient_g = 0.1 + (player_data["COLOR"][1]/3)
+                player_model.ambient_b = 0.1 + (player_data["COLOR"][2]/3)
+                
+                
+                player_model.diffuse_r = player_data["COLOR"][0]
+                player_model.diffuse_g = player_data["COLOR"][1]
+                player_model.diffuse_b = player_data["COLOR"][2]
+
+                player_model.specular_r = 1
+                player_model.specular_g = 1
+                player_model.specular_b = 1
+                player_model.shine = 125
+
+                player_model.trans_x = player_data["POSITION"][0]
+                player_model.trans_y = player_data["POSITION"][1]
+                player_model.trans_z = player_data["POSITION"][2]
+                player_data["MODEL"] = player_model
+
 
     def update_player_positions(self):
-        if "PLAYERS" in self.server_game_state: #Just in case we havent recived any data yet
-            for player in self.server_game_state["PLAYERS"]:
-                self.players[int(player["ID"])]["MODEL"].trans_x = player["POSITION"][0]
-                self.players[int(player["ID"])]["MODEL"].trans_y = player["POSITION"][1]-2
-                self.players[int(player["ID"])]["MODEL"].trans_z = player["POSITION"][2] 
+        for player_id,player_data in self.server_game_state["PLAYERS"].items():
+            if player_id != self.net.id:
+                player_data["MODEL"].trans_x = player_data["POSITION"][0]
+                player_data["MODEL"].trans_y = player_data["POSITION"][1]-2
+                player_data["MODEL"].trans_z = player_data["POSITION"][2] 
 
 
     def send_data(self):
-        data = {"PLAYER": {"ID": self.net.id, "POSITION": [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]}}
+        data = {"PLAYER": 
+                    {
+                    "ID": self.net.id,
+                    "POSITION": [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z],
+                    "COLOR":[random(),random(),random()],
+                    }
+                }
         data = json.dumps(data)
         reply = self.net.send(data)
-        return reply
-
-
+        return reply            
         
 
     def MakeCube(self,
@@ -453,24 +470,25 @@ class GraphicsProgram3D:
             self.model_matrix.pop_matrix()
 
     def DrawPlayers(self):
+        for player_id,player_data in self.server_game_state["PLAYERS"].items():
+            if player_id != self.net.id:
+                self.DrawLights() #Need to calculate the lights for each object
 
-        if len(self.players) > 0:
-            for player in self.players:
-                if player["ID"] != self.net.id:
-                    self.DrawLights() #Need to calculate the lights for each object
+                self.shader.set_material_shininess(player_data["MODEL"].shine)
+                self.shader.set_material_diffuse(player_data["MODEL"].diffuse_r,player_data["MODEL"].diffuse_g, player_data["MODEL"].diffuse_b)
+                self.shader.set_material_specular(player_data["MODEL"].specular_r,player_data["MODEL"].specular_g,player_data["MODEL"].specular_b)
+                self.shader.set_material_ambient(player_data["MODEL"].ambient_r,player_data["MODEL"].ambient_g,player_data["MODEL"].ambient_b) #The natural color of the meterial
+                
+                self.model_matrix.push_matrix()
+                self.model_matrix.add_translation(player_data["MODEL"].trans_x,player_data["MODEL"].trans_y,player_data["MODEL"].trans_z)
+                self.model_matrix.add_scale(player_data["MODEL"].scale_x,player_data["MODEL"].scale_y,player_data["MODEL"].scale_z)
+                self.shader.set_model_matrix(self.model_matrix.matrix)
+                player_data["MODEL"].draw(self.shader)
+                self.model_matrix.pop_matrix()
 
-                    self.shader.set_material_shininess(player["MODEL"].shine)
-                    self.shader.set_material_diffuse(player["MODEL"].diffuse_r,player["MODEL"].diffuse_g, player["MODEL"].diffuse_b)
-                    self.shader.set_material_specular(player["MODEL"].specular_r,player["MODEL"].specular_g,player["MODEL"].specular_b)
-                    self.shader.set_material_ambient(player["MODEL"].ambient_r,player["MODEL"].ambient_g,player["MODEL"].ambient_b) #The natural color of the meterial
-                    
-                    self.model_matrix.push_matrix()
-                    self.model_matrix.add_translation(player["MODEL"].trans_x,player["MODEL"].trans_y,player["MODEL"].trans_z)
-                    self.model_matrix.add_scale(player["MODEL"].scale_x,player["MODEL"].scale_y,player["MODEL"].scale_z)
-                    self.shader.set_model_matrix(self.model_matrix.matrix)
-                    player["MODEL"].draw(self.shader)
-                    self.model_matrix.pop_matrix()
 
+    def DrawBullets(self):
+        pass
 
 
     def rotate_sphere(self, sphere_arr):

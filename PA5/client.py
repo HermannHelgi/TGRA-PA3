@@ -10,7 +10,7 @@ class Client:
         self.host = host
         self.port = port
         self.addr = (self.host, self.port)
-        self.buffer_size = 5000
+        self.buffer_size = 50000
         self.id = self.connect()
 
     def connect(self):

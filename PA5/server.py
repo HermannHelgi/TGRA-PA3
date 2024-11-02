@@ -20,22 +20,26 @@ print("Waiting for a connection")
     
 currentId = 0
 game_state = {
-    "PLAYERS" : [],
+    "PLAYERS" : {},
     "BULLETS" : []
 }
+clients_connected = {} #Key: (ip,port) : # value: "ID"
 
 def parse_reply(reply:dict):
     global game_state
     if "PLAYER" in reply:
-        if len(game_state["PLAYERS"]) < int(reply["PLAYER"]["ID"])+1: #First time player says its position
-            game_state["PLAYERS"].append(reply["PLAYER"])
-        else:
-            game_state["PLAYERS"][int(reply["PLAYER"]["ID"])] = reply["PLAYER"]
+        game_state["PLAYERS"][reply["PLAYER"]["ID"]] = reply["PLAYER"]
+    #if "BULLET" in reply:
+        #game_state["BULLETS"].append(reply)
+        #return reply["BULLET"]["ID"],"BULLET"
 
 
-def threaded_client(conn):
+
+
+def threaded_client(conn,addr):
     global currentId, game_state
     conn.send(str.encode(str(currentId)))
+    clients_connected[addr] = str(currentId)
     currentId += 1
     reply = ''
     while True:
@@ -47,16 +51,23 @@ def threaded_client(conn):
                 break
             else:
                 reply = json.loads(reply)
+                print(reply)
                 parse_reply(reply)
 
-
+                
                 print("Sending: game_state" )
 
             conn.sendall(str.encode(json.dumps(game_state)))
+
+            #Let everyone know of a new bullet. then remove it
+            while(len(game_state["BULLETS"]) >0):
+                game_state["BULLETS"].pop()
+
         except:
             break
-
-    #TODO remove the player from game_state
+    
+    game_state["PLAYERS"].pop(clients_connected[addr])
+    clients_connected.pop(addr)
     print("Connection Closed")
     conn.close()
 
@@ -65,4 +76,4 @@ while True:
     conn, addr = s.accept()
     print("Connected to: ", addr)
 
-    start_new_thread(threaded_client, (conn,))
+    start_new_thread(threaded_client, (conn,addr))

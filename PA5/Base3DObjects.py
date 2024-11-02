@@ -244,3 +244,11 @@ class MeshModel:
             shader.set_attribute_buffers(self.vertex_buffer_ids[mesh_id])
             glDrawArrays(GL_TRIANGLES, 0, self.vertex_counts[mesh_id])
             glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+
+class Bullet(Sphere):
+    def __init__(self, stacks=12, slices=23, id = 0, direction = [],velocity = 0):
+        super().__init__(stacks, slices)
+        self.direction = direction
+        self.id = id
+        self.velocity = velocity
