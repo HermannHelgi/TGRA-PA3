@@ -41,12 +41,16 @@ class GraphicsProgram3D:
         self.projection_matrix.set_perspective(60, self.screenWidth/self.screenHeight, 0.5, 60)
         self.shader.set_projection_matrix(self.projection_matrix.get_matrix())
 
+        # SHOOTING VARIABLES
+        self.shootTimer = 0
+        self.shootCooldown = 1
+        self.bullet_height_max_and_min = 6
+
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
         self.movementSpeed = 3
         self.walkingSpeed = self.movementSpeed
         self.sprintspeed = 6
-
 
         self.mouseSensitivity = 0.1
         self.yawAmount = 0
@@ -58,6 +62,7 @@ class GraphicsProgram3D:
         self.cubes = []
         self.spheres = []
         self.lights = []
+        self.bullets = []
         
         self.clock = pygame.time.Clock()
         self.clock.tick()
@@ -65,11 +70,6 @@ class GraphicsProgram3D:
         self.obj_model = obj_3D_loading.load_obj_file(sys.path[0] + "/models", 'Satellite.obj')
         
         # Movement presets.
-        self.pitchUpKey = K_UP
-        self.pitchDownKey = K_DOWN
-        self.rotateLeftKey = K_LEFT
-        self.rotateRightKey = K_RIGHT
-
         self.forwardsKey = K_w
         self.backwardsKey = K_s
         self.leftWalkKey = K_a
@@ -82,6 +82,7 @@ class GraphicsProgram3D:
         self.right_key_down = False
 
         self.invisible_box_padding = 0.7 # Padding on AABB
+        self.invisible_box_padding_removed_for_bullet = 0.4 # Padding which is removed for bullets
 
         self.light_pos = [0,0,0]
 
@@ -118,6 +119,9 @@ class GraphicsProgram3D:
         delta_time = self.clock.tick() / 1000.0
 
         #Controls
+        if self.shootTimer > 0:
+            self.shootTimer -= delta_time
+
         if (self.forwards_key_down):
             self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
         if (self.backwards_key_down):
@@ -145,8 +149,16 @@ class GraphicsProgram3D:
 
         for elem in self.spinning_spheres:
             self.spheres[elem].rotate_y += 30 * delta_time
-
-
+        
+        remove_bullets = []
+        for index, bullet in enumerate(self.bullets):
+            value = bullet.move(delta_time, self.boxes, self.invisible_box_padding_removed_for_bullet, self.bullet_height_max_and_min)
+            if value == -1:
+                remove_bullets.append(index)
+        
+        for index in remove_bullets:
+            del self.bullets[index]
+                
     def display(self):
         """
         Displays all graphics for the game, is split into 'Main view' and 'Minimap' for those two viewports.
@@ -164,6 +176,7 @@ class GraphicsProgram3D:
         self.DrawLoadedObjects()
         self.DrawCubes()
         self.DrawSpheres()
+        self.DrawBullets()
         self.DrawPlayers()
 
         pygame.display.flip()
@@ -180,12 +193,16 @@ class GraphicsProgram3D:
             mouseX, mouseY = pygame.mouse.get_rel()
             self.yawAmount = mouseX
             self.pitchAmount = -mouseY
+            mouse_buttons = pygame.mouse.get_pressed()
+            if mouse_buttons[0] and self.shootTimer <= 0:
+                # TODO: Needs to be sent to server.
+                self.ShootBullet()
+                self.shootTimer = self.shootCooldown
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     print("Quitting.")
                     exiting = True
-                
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == K_ESCAPE:
@@ -203,8 +220,6 @@ class GraphicsProgram3D:
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.sprintspeed
 
-                
-
                 elif event.type == pygame.KEYUP:
 
                     #Movement
@@ -218,6 +233,7 @@ class GraphicsProgram3D:
                         self.right_key_down = False
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.walkingSpeed
+                
             
             self.server_game_state = json.loads(self.send_data())
             self.add_player_to_world()
@@ -229,6 +245,9 @@ class GraphicsProgram3D:
         #OUT OF GAME LOOP
         pygame.quit()
    
+    def ShootBullet(self):
+        # TODO: Will have to change the colors to match each player.
+        self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, 1,0,0 ,1,0,0, -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z)
 
     def add_bullets_to_world(self):
         pass
@@ -261,9 +280,6 @@ class GraphicsProgram3D:
                 player_model.trans_z = player_data["POSITION"][2]
                 player_data["MODEL"] = player_model
 
-
-
-
     def send_data(self):
         data = {"PLAYER": 
                     {
@@ -277,9 +293,14 @@ class GraphicsProgram3D:
         return reply
 
     def randomize_spawn(self):
-        random_spawn = self.spawn_locations[randint(0, self.spawn_locations.__len__())]
+        random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
         # If the Y value of the look() function is changed to not be the same, remember to change the current_pitch value to fit that.
+
+    def MakeBullet(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z):
+        new_bullet = Bullet(x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z)
+
+        self.bullets.append(new_bullet)
 
     def MakeCube(self,
                   translation_x=0, 
@@ -439,7 +460,7 @@ class GraphicsProgram3D:
 
     def DrawSpheres(self):
         """
-        Draws all spheres into the sceene.
+        Draws all spheres into the scene.
         """
         for sphere in self.spheres:
             self.DrawLights() #Need to calculate the lights for each object
@@ -510,10 +531,24 @@ class GraphicsProgram3D:
                 player_data["MODEL"].draw(self.shader)
                 self.model_matrix.pop_matrix()
 
-
     def DrawBullets(self):
-        pass
+        for bullet in self.bullets:
+            self.DrawLights() #Need to calculate the lights for each object
+            self.shader.set_material_diffuse(bullet.body.diffuse_r,bullet.body.diffuse_g, bullet.body.diffuse_b)
 
+            self.shader.set_material_shininess(bullet.body.shine)
+            self.shader.set_material_specular(bullet.body.specular_r,bullet.body.specular_g,bullet.body.specular_b)
+            self.shader.set_material_ambient(bullet.body.ambient_r,bullet.body.ambient_g,bullet.body.ambient_b) #The natural color of the meterial
+            self.shader.set_material_emission(bullet.body.emission_r,bullet.body.emission_g,bullet.body.emission_b)
+
+            self.model_matrix.push_matrix()
+            self.model_matrix.add_translation(bullet.body.trans_x,bullet.body.trans_y,bullet.body.trans_z)
+            self.model_matrix.add_scale(bullet.body.scale_x,bullet.body.scale_y,bullet.body.scale_z)
+            self.shader.set_model_matrix(self.model_matrix.matrix)
+
+            bullet.body.draw(self.shader)
+
+            self.model_matrix.pop_matrix()
 
     def rotate_sphere(self, sphere_arr):
         """

@@ -63,11 +63,11 @@ class Cube:
     def __init__(self):
         vertex_array = [
             -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
-             0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
+            -0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
              0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
             -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
              0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
-            -0.5,  0.5,  0.5,  0.0,  0.0,  1.0,
+             0.5, -0.5,  0.5,  0.0,  0.0,  1.0,
 
             -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,
             -0.5,  0.5, -0.5,  0.0,  0.0, -1.0,
@@ -84,18 +84,18 @@ class Cube:
             -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,
 
              0.5, -0.5, -0.5,  1.0,  0.0,  0.0,
-             0.5,  0.5, -0.5,  1.0,  0.0,  0.0,
+             0.5, -0.5,  0.5,  1.0,  0.0,  0.0,
              0.5,  0.5,  0.5,  1.0,  0.0,  0.0,
              0.5, -0.5, -0.5,  1.0,  0.0,  0.0,
              0.5,  0.5,  0.5,  1.0,  0.0,  0.0,
-             0.5, -0.5,  0.5,  1.0,  0.0,  0.0,
+             0.5,  0.5, -0.5,  1.0,  0.0,  0.0,
 
             -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
-            -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
+             0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
              0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
             -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
              0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
-             0.5,  0.5, -0.5,  0.0,  1.0,  0.0,
+            -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,
 
             -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,
              0.5, -0.5, -0.5,  0.0, -1.0,  0.0,
@@ -158,12 +158,18 @@ class Sphere:
         self.specular_r = 0
         self.specular_g = 0
         self.specular_b = 0
+
         self.diffuse_r = 0
         self.diffuse_g = 0
         self.diffuse_b = 0
+
         self.ambient_r = 0
         self.ambient_g = 0
         self.ambient_b = 0
+
+        self.emission_r = 0
+        self.emission_g = 0
+        self.emission_b = 0
         self.shine = 0
 
         self.texture = textures
@@ -228,6 +234,52 @@ class Material:
         self.specular = Color(0.0, 0.0, 0.0) if specular == None else specular
         self.shininess = 1 if shininess == None else shininess
 
+class Bullet:
+    def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z):
+        self.body = Sphere()
+        self.body.trans_x = x
+        self.body.trans_y = y
+        self.body.trans_z = z
+        self.body.scale_x = 0.2
+        self.body.scale_y = 0.2
+        self.body.scale_z = 0.2
+        self.body.rotate_x = 0
+        self.body.rotate_y = 0
+        self.body.rotate_z = 0
+        self.body.diffuse_r = dr
+        self.body.diffuse_g = dg
+        self.body.diffuse_b = db
+        self.body.specular_r = sr
+        self.body.specular_g = sg
+        self.body.specular_b = sb
+        self.body.ambient_r = 0
+        self.body.ambient_g = 0
+        self.body.ambient_b = 0
+        self.body.emission_r = 0
+        self.body.emission_g = 0
+        self.body.emission_b = 0
+        self.body.shine = 5
+
+        self.speed = 12
+        self.direction_x = direction_x
+        self.direction_y = direction_y
+        self.direction_z = direction_z
+    
+    def move(self, delta_time, arr = [], remove = 0, height = 0):
+        self.body.trans_x += self.direction_x * self.speed * delta_time
+        self.body.trans_y += self.direction_y * self.speed * delta_time
+        self.body.trans_z += self.direction_z * self.speed * delta_time
+
+        if (self.body.trans_y < height and self.body.trans_y > 0):
+            for box in arr:
+                if (box[0] + remove) <= self.body.trans_x <= (box[1] - remove) and (box[2] + remove) <= self.body.trans_z <= (box[3] - remove):
+                    return -1
+        else:
+            if (self.body.trans_y < -5 or self.body.trans_y > (height + 5)):
+                return -1
+
+        return 1
+
 class MeshModel:
     def __init__(self):
         self.vertex_arrays = dict()
@@ -265,11 +317,3 @@ class MeshModel:
             shader.set_attribute_buffers(self.vertex_buffer_ids[mesh_id])
             glDrawArrays(GL_TRIANGLES, 0, self.vertex_counts[mesh_id])
             glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-
-class Bullet(Sphere):
-    def __init__(self, stacks=12, slices=23, id = 0, direction = [],velocity = 0):
-        super().__init__(stacks, slices)
-        self.direction = direction
-        self.id = id
-        self.velocity = velocity
