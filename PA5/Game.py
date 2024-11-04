@@ -243,7 +243,6 @@ class GraphicsProgram3D:
                         self.movementSpeed = self.walkingSpeed
                 
             
-            self.add_bullets_to_world()
 
             self.update()
             self.display()
@@ -255,8 +254,6 @@ class GraphicsProgram3D:
         playerColors = self.serverGameState["PLAYERS"][str(self.net.id)]["COLOR"] #Make the bullet the same as the players
         self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, float(playerColors[0]),float(playerColors[1]),float(playerColors[2]) ,float(playerColors[0]),float(playerColors[1]),float(playerColors[2]), -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z)
 
-    def add_bullets_to_world(self):
-        pass
 
     """This is for when a new player joins we only create it's model once"""
     def generatePlayerModels(self):
