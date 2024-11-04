@@ -62,7 +62,8 @@ def threaded_client(conn,addr):
             break
     
     game_state["PLAYERS"].pop(clients_connected[addr])
-    game_state["BULLETS"].pop(clients_connected[addr])
+    if clients_connected[addr] in game_state["BULLETS"]:
+        game_state["BULLETS"].pop(clients_connected[addr])
     clients_connected.pop(addr)
     print(addr , " has disconected. closing connection.")
     conn.close()
