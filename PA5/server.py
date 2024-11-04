@@ -21,7 +21,7 @@ print("Waiting for a connection")
 currentId = 0
 game_state = {
     "PLAYERS" : {},
-    "BULLETS" : []
+    "BULLETS" : {}
 }
 clients_connected = {} #Key: (ip,port) : # value: "ID"
 
@@ -29,9 +29,8 @@ def parse_reply(reply:dict):
     global game_state
     if "PLAYER" in reply:
         game_state["PLAYERS"][reply["PLAYER"]["ID"]] = reply["PLAYER"]
-    #if "BULLET" in reply:
-        #game_state["BULLETS"].append(reply)
-        #return reply["BULLET"]["ID"],"BULLET"
+    if "BULLET" in reply:
+        game_state["BULLETS"][reply["BULLET"]["ID"]] = reply["BULLET"]
 
 
 
@@ -51,24 +50,23 @@ def threaded_client(conn,addr):
                 break
             else:
                 reply = json.loads(reply)
-                print(reply)
                 parse_reply(reply)
 
                 
                 print("Sending: game_state" )
-
+                print(game_state)
             conn.sendall(str.encode(json.dumps(game_state)))
 
             #Let everyone know of a new bullet. then remove it
-            while(len(game_state["BULLETS"]) >0):
-                game_state["BULLETS"].pop()
+            if clients_connected[addr] in game_state["BULLETS"]:
+                game_state["BULLETS"].pop(clients_connected[addr])
 
         except:
             break
     
     game_state["PLAYERS"].pop(clients_connected[addr])
     clients_connected.pop(addr)
-    print("Connection Closed")
+    print(addr , " has disconected. closing connection.")
     conn.close()
 
 

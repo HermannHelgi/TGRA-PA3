@@ -235,7 +235,7 @@ class Material:
         self.shininess = 1 if shininess == None else shininess
 
 class Bullet:
-    def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z):
+    def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z , player_id = 0):
         self.body = Sphere()
         self.body.trans_x = x
         self.body.trans_y = y
@@ -264,6 +264,8 @@ class Bullet:
         self.direction_x = direction_x
         self.direction_y = direction_y
         self.direction_z = direction_z
+
+        self.player_id = player_id
     
     def move(self, delta_time, arr = [], remove = 0, height = 0):
         self.body.trans_x += self.direction_x * self.speed * delta_time
@@ -279,6 +281,17 @@ class Bullet:
                 return -1
 
         return 1
+
+    """Gets the bullets data required for the server"""
+    def get_data(self) -> dict:
+        data = {
+            "POSITION" : [self.body.trans_x,self.body.trans_y,self.body.trans_z],
+            "DIRECTION": [self.direction_x,self.direction_y,self.direction_z],
+            "COLORS": [self.body.diffuse_r,self.body.diffuse_g,self.body.diffuse_b],
+            "ID": self.player_id
+        }
+        return data
+
 
 class MeshModel:
     def __init__(self):

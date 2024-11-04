@@ -96,7 +96,8 @@ class GraphicsProgram3D:
 
         # Network stuffs
         self.net = Client()
-        self.server_game_state = {}
+        self.bullet_id = 0
+        self.serverGameState = json.loads(self.addPlayerToServer())
 
         self.tex_id1 = self.LoadTexture("/textures/JUPI.jpg")
 
@@ -117,6 +118,9 @@ class GraphicsProgram3D:
         Updates the game.
         """
         delta_time = self.clock.tick() / 1000.0
+
+        #Get new server data
+        self.updateGameState()
 
         #Controls
         if self.shootTimer > 0:
@@ -167,7 +171,10 @@ class GraphicsProgram3D:
         glEnable(GL_DEPTH_TEST) 
         glViewport(0, 0, self.screenWidth, self.screenHeight)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)  
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+        #Update from new server data
+        self.generatePlayerModels()
 
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important        
@@ -235,8 +242,6 @@ class GraphicsProgram3D:
                         self.movementSpeed = self.walkingSpeed
                 
             
-            self.server_game_state = json.loads(self.send_data())
-            self.add_player_to_world()
             self.add_bullets_to_world()
 
             self.update()
@@ -246,15 +251,15 @@ class GraphicsProgram3D:
         pygame.quit()
    
     def ShootBullet(self):
-        # TODO: Will have to change the colors to match each player.
-        self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, 1,0,0 ,1,0,0, -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z)
+        playerColors = self.serverGameState["PLAYERS"][str(self.net.id)]["COLOR"] #Make the bullet the same as the players
+        self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, float(playerColors[0]),float(playerColors[1]),float(playerColors[2]) ,float(playerColors[0]),float(playerColors[1]),float(playerColors[2]), -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z)
 
     def add_bullets_to_world(self):
         pass
 
     """This is for when a new player joins we only create it's model once"""
-    def add_player_to_world(self):
-        for player_id,player_data in self.server_game_state["PLAYERS"].items():
+    def generatePlayerModels(self):
+        for player_id,player_data in self.serverGameState["PLAYERS"].items():
             if player_id != self.net.id:
                 player_model = Sphere()
                 player_model.scale_x = 1.5
@@ -280,7 +285,11 @@ class GraphicsProgram3D:
                 player_model.trans_z = player_data["POSITION"][2]
                 player_data["MODEL"] = player_model
 
-    def send_data(self):
+    """
+    This tells the server to add this instance to the server and what data our player has.
+    returns the servers game state as string.
+    """
+    def addPlayerToServer(self):
         data = {"PLAYER": 
                     {
                     "ID": self.net.id,
@@ -292,15 +301,50 @@ class GraphicsProgram3D:
         reply = self.net.send(data)
         return reply
 
+    """Lets the server know of our new position and gets the current game state from the server"""
+    def updateGameState(self):
+        self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]
+        data = {}
+        data["PLAYER"] = self.serverGameState["PLAYERS"][str(self.net.id)]
+        data = json.dumps(data)
+        reply = self.net.send(data)
+        self.serverGameState = json.loads(reply)
+        print("after pos")
+        print(self.serverGameState)
+        for bullet in self.serverGameState["BULLETS"]:
+            new_bullet = Bullet(
+                bullet["POSITION"][0],
+                bullet["POSITION"][1],
+                bullet["POSITION"][2], 
+                bullet["COLOR"][0],
+                bullet["COLOR"][1],
+                bullet["COLOR"][2],
+
+                bullet["COLOR"][0],
+                bullet["COLOR"][1],
+                bullet["COLOR"][2],
+                bullet["DIRECTION"][0],
+                bullet["DIRECTION"][1],
+                bullet["DIRECTION"][2],
+                bullet["ID"])
+            self.bullets.append(new_bullet)           
+            
+
+
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
         # If the Y value of the look() function is changed to not be the same, remember to change the current_pitch value to fit that.
 
     def MakeBullet(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z):
-        new_bullet = Bullet(x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z)
-
-        self.bullets.append(new_bullet)
+        new_bullet = Bullet(x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z,self.net.id)
+        data = {"BULLET": new_bullet.get_data()}
+        data = json.dumps(data)
+        reply = self.net.send(data)
+        self.serverGameState = json.loads(reply)
+        print("after bullet")
+        print(self.serverGameState)
+        
 
     def MakeCube(self,
                   translation_x=0, 
@@ -515,7 +559,7 @@ class GraphicsProgram3D:
             self.model_matrix.pop_matrix()
 
     def DrawPlayers(self):
-        for player_id,player_data in self.server_game_state["PLAYERS"].items():
+        for player_id,player_data in self.serverGameState["PLAYERS"].items():
             if player_id != self.net.id:
                 self.DrawLights() #Need to calculate the lights for each object
 
