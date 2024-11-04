@@ -236,16 +236,13 @@ class Material:
 
 class Bullet:
     def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z , player_id = 0):
-        self.body = Sphere()
+        self.body = Cube()
         self.body.trans_x = x
         self.body.trans_y = y
         self.body.trans_z = z
         self.body.scale_x = 0.2
         self.body.scale_y = 0.2
         self.body.scale_z = 0.2
-        self.body.rotate_x = 0
-        self.body.rotate_y = 0
-        self.body.rotate_z = 0
         self.body.diffuse_r = dr
         self.body.diffuse_g = dg
         self.body.diffuse_b = db
