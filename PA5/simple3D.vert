@@ -2,7 +2,7 @@ attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec2 a_uv;
 
-varying vec4 u_eye_pos;
+uniform vec4 u_eye_pos;
 
 uniform mat4 u_model_matrix;
 uniform mat4 u_view_matrix;
@@ -33,13 +33,12 @@ void main(void)
     vec4 normal = vec4(a_normal.x, a_normal.y, a_normal.z, 0.0);
     position = u_model_matrix * position;
     v_normal = normalize(u_model_matrix * normal);
+    vec4 v = normalize(u_eye_pos - position);             
 
     for(int i = 0; i < 5; i ++)
     {
         v_s[i] = normalize(u_lights[i].position - position);  
-        vec4 v = normalize(u_eye_pos - position);             
         v_h[i] = normalize(v_s[i] + v);   
-
     }
     
     

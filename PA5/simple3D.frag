@@ -17,8 +17,6 @@ uniform Light u_lights[5];  // Light array
 varying vec4 v_s[5];
 varying vec4 v_h[5];
 
-varying vec4 u_eye_pos;     // Camera position in world space
-
 uniform vec4 u_material_specular;
 uniform vec4 u_material_diffuse;
 uniform vec4 u_material_ambient;
@@ -44,8 +42,8 @@ void main(void)
     for (int i = 0; i < 5; i++) 
     {
     
-        float lambert = max(dot(v_normal, (v_s[i])), 0.0);             
-        float phong = max(dot(v_normal, (v_h[i])), 0.0);               
+        float lambert = max(dot(normalize(v_normal), normalize(v_s[i])), 0.0);             
+        float phong = max(dot(normalize(v_normal), normalize(v_h[i])), 0.0);               
 
         vec4 ambientColor = u_lights[i].ambient * u_material_ambient;
         vec4 diffuseColor = u_lights[i].diffuse * mat_diffuse * lambert;
