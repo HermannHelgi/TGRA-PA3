@@ -287,7 +287,7 @@ class Bullet:
         data = {
             "POSITION" : [self.body.trans_x,self.body.trans_y,self.body.trans_z],
             "DIRECTION": [self.direction_x,self.direction_y,self.direction_z],
-            "COLORS": [self.body.diffuse_r,self.body.diffuse_g,self.body.diffuse_b],
+            "COLOR": [self.body.diffuse_r,self.body.diffuse_g,self.body.diffuse_b],
             "ID": self.player_id
         }
         return data

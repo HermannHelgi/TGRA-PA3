@@ -310,9 +310,8 @@ class GraphicsProgram3D:
         data = json.dumps(data)
         reply = self.net.send(data)
         self.serverGameState = json.loads(reply)
-        print("after pos")
-        print(self.serverGameState)
-        for bullet in self.serverGameState["BULLETS"]:
+        for bullet_id in self.serverGameState["BULLETS"]:
+            bullet = self.serverGameState["BULLETS"][bullet_id]
             new_bullet = Bullet(
                 bullet["POSITION"][0],
                 bullet["POSITION"][1],
@@ -343,8 +342,6 @@ class GraphicsProgram3D:
         data = json.dumps(data)
         reply = self.net.send(data)
         self.serverGameState = json.loads(reply)
-        print("after bullet")
-        print(self.serverGameState)
         
 
     def MakeCube(self,
