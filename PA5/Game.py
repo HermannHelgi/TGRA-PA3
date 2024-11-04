@@ -326,8 +326,6 @@ class GraphicsProgram3D:
                 bullet["ID"])
             self.bullets.append(new_bullet)           
             
-
-
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
@@ -340,7 +338,6 @@ class GraphicsProgram3D:
         reply = self.net.send(data)
         self.serverGameState = json.loads(reply)
         
-
     def MakeCube(self,
                   translation_x=0, 
                   translation_y=0, 
