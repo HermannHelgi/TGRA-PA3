@@ -153,9 +153,9 @@ class GraphicsProgram3D:
         for elem in self.spinning_spheres:
             self.spheres[elem].rotate_y += 30 * delta_time
         
-        for bullet in self.bullets:
-            if bullet.player_id != self.net.id:
-                distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet.body.trans_x, bullet.body.trans_y, bullet.body.trans_z], [bullet.direction_x, bullet.direction_y, bullet.direction_z])
+        for bullet_id,bullet_data in self.serverGameState["BULLETS"].items():
+            if bullet_id != self.net.id:
+                distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet_data["POSITION"][0],bullet_data["POSITION"][1],bullet_data["POSITION"][2]], [bullet_data["DIRECTION"][0],bullet_data["DIRECTION"][1],bullet_data["DIRECTION"][2]])
                 if distance <= self.killDistance:
                     self.randomize_spawn()
 
@@ -183,6 +183,7 @@ class GraphicsProgram3D:
 
         #Update from new server data
         self.generatePlayerModels()
+        self.generateBulletModels()
 
         # MAIN VIEW
         self.shader.set_view_matrix(self.view_matrix.get_matrix()) # New View Matrix each frame, important 
@@ -299,6 +300,27 @@ class GraphicsProgram3D:
                 player_model.trans_z = player_data["POSITION"][2]
                 player_data["MODEL"] = player_model
 
+    def generateBulletModels(self):
+        for bullet_id,bullet_data in self.serverGameState["BULLETS"].items():
+            new_bullet = Bullet(
+                    bullet_data["POSITION"][0],
+                    bullet_data["POSITION"][1],
+                    bullet_data["POSITION"][2], 
+                    bullet_data["COLOR"][0],
+                    bullet_data["COLOR"][1],
+                    bullet_data["COLOR"][2],
+
+                    bullet_data["COLOR"][0],
+                    bullet_data["COLOR"][1],
+                    bullet_data["COLOR"][2],
+                    bullet_data["DIRECTION"][0],
+                    bullet_data["DIRECTION"][1],
+                    bullet_data["DIRECTION"][2],
+                    bullet_data["ROTATION"][0],
+                    bullet_data["ROTATION"][1],
+                    bullet_data["ID"])
+            bullet_data["MODEL"] = new_bullet
+
     """
     This tells the server to add this instance to the server and what data our player has.
     returns the servers game state as string.
@@ -323,50 +345,8 @@ class GraphicsProgram3D:
         data = json.dumps(data)
         reply = self.net.send(data)
         self.serverGameState = json.loads(reply)
-        for bullet_id in self.serverGameState["BULLETS"]:
-            if (self.serverGameState["BULLETS"][bullet_id]["ID"] in self.id_to_bullet):
-                bullet = self.serverGameState["BULLETS"][bullet_id]
-                new_bullet = Bullet(
-                    bullet["POSITION"][0],
-                    bullet["POSITION"][1],
-                    bullet["POSITION"][2], 
-                    bullet["COLOR"][0],
-                    bullet["COLOR"][1],
-                    bullet["COLOR"][2],
 
-                    bullet["COLOR"][0],
-                    bullet["COLOR"][1],
-                    bullet["COLOR"][2],
-                    bullet["DIRECTION"][0],
-                    bullet["DIRECTION"][1],
-                    bullet["DIRECTION"][2],
-                    bullet["ROTATION"][0],
-                    bullet["ROTATION"][1],
-                    bullet["ID"])
-                self.bullets[self.id_to_bullet[bullet["ID"]]] = new_bullet
-            else:
-                bullet = self.serverGameState["BULLETS"][bullet_id]
-                new_bullet = Bullet(
-                    bullet["POSITION"][0],
-                    bullet["POSITION"][1],
-                    bullet["POSITION"][2], 
-                    bullet["COLOR"][0],
-                    bullet["COLOR"][1],
-                    bullet["COLOR"][2],
-
-                    bullet["COLOR"][0],
-                    bullet["COLOR"][1],
-                    bullet["COLOR"][2],
-                    bullet["DIRECTION"][0],
-                    bullet["DIRECTION"][1],
-                    bullet["DIRECTION"][2],
-                    bullet["ROTATION"][0],
-                    bullet["ROTATION"][1],
-                    bullet["ID"])
-                self.bullets.append(new_bullet)   
-                self.id_to_bullet[bullet["ID"]] = self.bullets.index(new_bullet)
             
-        # TODO: Remove bullet once player disconnects!!!!!!
         
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
@@ -610,25 +590,27 @@ class GraphicsProgram3D:
                 self.model_matrix.pop_matrix()
 
     def DrawBullets(self):
-        for bullet in self.bullets:
+        for bullet_id,bullet_data in self.serverGameState["BULLETS"].items():
             self.DrawLights() #Need to calculate the lights for each object
-            self.shader.set_material_diffuse(bullet.body.diffuse_r,bullet.body.diffuse_g, bullet.body.diffuse_b)
 
-            self.shader.set_material_shininess(bullet.body.shine)
-            self.shader.set_material_specular(bullet.body.specular_r,bullet.body.specular_g,bullet.body.specular_b)
-            self.shader.set_material_ambient(bullet.body.ambient_r,bullet.body.ambient_g,bullet.body.ambient_b) #The natural color of the meterial
-            self.shader.set_material_emission(bullet.body.emission_r,bullet.body.emission_g,bullet.body.emission_b)
+
+            self.shader.set_material_diffuse(bullet_data["MODEL"].body.diffuse_r,bullet_data["MODEL"].body.diffuse_g,bullet_data["MODEL"].body.diffuse_b)
+
+            self.shader.set_material_shininess(5)
+            self.shader.set_material_specular(bullet_data["MODEL"].body.specular_r,bullet_data["MODEL"].body.specular_g,bullet_data["MODEL"].body.specular_b)
+            self.shader.set_material_ambient(0,0,0) #The natural color of the meterial
+            self.shader.set_material_emission(0,0,0)
 
             self.model_matrix.push_matrix()
-            self.model_matrix.add_translation(bullet.body.trans_x,bullet.body.trans_y,bullet.body.trans_z)
+            self.model_matrix.add_translation(bullet_data["MODEL"].body.trans_x,bullet_data["MODEL"].body.trans_y,bullet_data["MODEL"].body.trans_z)
             
-            self.model_matrix.add_rotation_y(math.degrees(-bullet.angle))
-            self.model_matrix.add_rotation_x(math.degrees(bullet.pitch))
+            self.model_matrix.add_rotation_y(math.degrees(-bullet_data["MODEL"].angle))
+            self.model_matrix.add_rotation_x(math.degrees(bullet_data["MODEL"].pitch))
 
-            self.model_matrix.add_scale(bullet.body.scale_x,bullet.body.scale_y,bullet.body.scale_z + 200)
+            self.model_matrix.add_scale(0.2,0.2,0.2 + 200)
             self.shader.set_model_matrix(self.model_matrix.matrix)
 
-            bullet.body.draw(self.shader)
+            bullet_data["MODEL"].body.draw(self.shader)
 
             self.model_matrix.pop_matrix()
 
