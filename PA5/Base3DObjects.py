@@ -235,7 +235,7 @@ class Material:
         self.shininess = 1 if shininess == None else shininess
 
 class Bullet:
-    def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z , player_id = 0):
+    def __init__(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z, pitch, angle, player_id = 0):
         self.body = Cube()
         self.body.trans_x = x
         self.body.trans_y = y
@@ -258,32 +258,20 @@ class Bullet:
         self.body.shine = 5
 
         self.speed = 12
+        self.pitch = pitch
+        self.angle = angle
         self.direction_x = direction_x
         self.direction_y = direction_y
         self.direction_z = direction_z
 
         self.player_id = player_id
-    
-    def move(self, delta_time, arr = [], remove = 0, height = 0):
-        self.body.trans_x += self.direction_x * self.speed * delta_time
-        self.body.trans_y += self.direction_y * self.speed * delta_time
-        self.body.trans_z += self.direction_z * self.speed * delta_time
-
-        if (self.body.trans_y < height and self.body.trans_y > 0):
-            for box in arr:
-                if (box[0] + remove) <= self.body.trans_x <= (box[1] - remove) and (box[2] + remove) <= self.body.trans_z <= (box[3] - remove):
-                    return -1
-        else:
-            if (self.body.trans_y < -5 or self.body.trans_y > (height + 5)):
-                return -1
-
-        return 1
 
     """Gets the bullets data required for the server"""
     def get_data(self) -> dict:
         data = {
             "POSITION" : [self.body.trans_x,self.body.trans_y,self.body.trans_z],
-            "DIRECTION": [self.direction_x,self.direction_y,self.direction_z],
+            "DIRECTION": [self.direction_x,self.direction_y, self.direction_z],
+            "ROTATION": [self.pitch,self.angle],
             "COLOR": [self.body.diffuse_r,self.body.diffuse_g,self.body.diffuse_b],
             "ID": self.player_id
         }

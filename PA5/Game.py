@@ -44,7 +44,7 @@ class GraphicsProgram3D:
         # SHOOTING VARIABLES
         self.shootTimer = 0
         self.shootCooldown = 1
-        self.bullet_height_max_and_min = 6
+        self.killDistance = 1
 
         # EDITOR & SPEED VARIABLES # 
         self.canFly = False
@@ -56,13 +56,13 @@ class GraphicsProgram3D:
         self.yawAmount = 0
         self.pitchAmount = 0
 
-
         # INTERNAL VARIABLES #
         self.boxes = []
         self.cubes = []
         self.spheres = []
         self.lights = []
         self.bullets = []
+        self.id_to_bullet = dict()
         
         self.clock = pygame.time.Clock()
         self.clock.tick()
@@ -82,7 +82,6 @@ class GraphicsProgram3D:
         self.right_key_down = False
 
         self.invisible_box_padding = 0.7 # Padding on AABB
-        self.invisible_box_padding_removed_for_bullet = 0.4 # Padding which is removed for bullets
 
         self.light_pos = [0,0,0]
 
@@ -154,15 +153,24 @@ class GraphicsProgram3D:
         for elem in self.spinning_spheres:
             self.spheres[elem].rotate_y += 30 * delta_time
         
-        remove_bullets = []
-        for index, bullet in enumerate(self.bullets):
-            value = bullet.move(delta_time, self.boxes, self.invisible_box_padding_removed_for_bullet, self.bullet_height_max_and_min)
-            if value == -1:
-                remove_bullets.append(index)
+        for bullet in self.bullets:
+            if bullet.player_id != self.net.id:
+                distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet.body.trans_x, bullet.body.trans_y, bullet.body.trans_z], [bullet.direction_x, bullet.direction_y, bullet.direction_z])
+                if distance <= self.killDistance:
+                    self.randomize_spawn()
+
+    def distance_from_point_to_line(self, point, line_point, line_direction):
+        P = numpy.array(point)
+        A = numpy.array(line_point)
+        d = numpy.array(line_direction)
         
-        for index in remove_bullets:
-            del self.bullets[index]
-                
+        AP = P - A
+        
+        cross_product = numpy.cross(AP, d)
+        distance = numpy.linalg.norm(cross_product) / numpy.linalg.norm(d)
+        
+        return distance
+
     def display(self):
         """
         Displays all graphics for the game, is split into 'Main view' and 'Minimap' for those two viewports.
@@ -203,7 +211,6 @@ class GraphicsProgram3D:
             self.pitchAmount = -mouseY
             mouse_buttons = pygame.mouse.get_pressed()
             if mouse_buttons[0] and self.shootTimer <= 0:
-                # TODO: Needs to be sent to server.
                 self.ShootBullet()
                 self.shootTimer = self.shootCooldown
 
@@ -252,17 +259,26 @@ class GraphicsProgram3D:
    
     def ShootBullet(self):
         playerColors = self.serverGameState["PLAYERS"][str(self.net.id)]["COLOR"] #Make the bullet the same as the players
-        self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, float(playerColors[0]),float(playerColors[1]),float(playerColors[2]) ,float(playerColors[0]),float(playerColors[1]),float(playerColors[2]), -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z)
 
+        temp = Vector(0, 0, 1)
+        new_vec = Vector(self.view_matrix.norm_vector.x, 0, self.view_matrix.norm_vector.z)
+        dot = temp.dot(new_vec)
+        solution = acos(dot / (temp.__len__() * new_vec.__len__()))
+        sign_check = temp.cross(new_vec)
+
+        if (sign_check.y > 0):
+            solution = -solution
+
+        self.MakeBullet(self.view_matrix.eye.x,self.view_matrix.eye.y - 0.5,self.view_matrix.eye.z, float(playerColors[0]),float(playerColors[1]),float(playerColors[2]) ,float(playerColors[0]),float(playerColors[1]),float(playerColors[2]), -self.view_matrix.norm_vector.x, -self.view_matrix.norm_vector.y, -self.view_matrix.norm_vector.z,  self.view_matrix.current_pitch, solution)
 
     """This is for when a new player joins we only create it's model once"""
     def generatePlayerModels(self):
         for player_id,player_data in self.serverGameState["PLAYERS"].items():
             if player_id != self.net.id:
                 player_model = Sphere()
-                player_model.scale_x = 1.5
-                player_model.scale_y = 3
-                player_model.scale_z = 1.5
+                player_model.scale_x = 0.8
+                player_model.scale_y = 2
+                player_model.scale_z = 0.8
 
                 player_model.ambient_r = 0.1 + (player_data["COLOR"][0]/3)
                 player_model.ambient_g = 0.1 + (player_data["COLOR"][1]/3)
@@ -279,7 +295,7 @@ class GraphicsProgram3D:
                 player_model.shine = 125
 
                 player_model.trans_x = player_data["POSITION"][0]
-                player_model.trans_y = player_data["POSITION"][1]
+                player_model.trans_y = player_data["POSITION"][1] - 1
                 player_model.trans_z = player_data["POSITION"][2]
                 player_data["MODEL"] = player_model
 
@@ -308,31 +324,57 @@ class GraphicsProgram3D:
         reply = self.net.send(data)
         self.serverGameState = json.loads(reply)
         for bullet_id in self.serverGameState["BULLETS"]:
-            bullet = self.serverGameState["BULLETS"][bullet_id]
-            new_bullet = Bullet(
-                bullet["POSITION"][0],
-                bullet["POSITION"][1],
-                bullet["POSITION"][2], 
-                bullet["COLOR"][0],
-                bullet["COLOR"][1],
-                bullet["COLOR"][2],
+            if (self.serverGameState["BULLETS"][bullet_id]["ID"] in self.id_to_bullet):
+                bullet = self.serverGameState["BULLETS"][bullet_id]
+                new_bullet = Bullet(
+                    bullet["POSITION"][0],
+                    bullet["POSITION"][1],
+                    bullet["POSITION"][2], 
+                    bullet["COLOR"][0],
+                    bullet["COLOR"][1],
+                    bullet["COLOR"][2],
 
-                bullet["COLOR"][0],
-                bullet["COLOR"][1],
-                bullet["COLOR"][2],
-                bullet["DIRECTION"][0],
-                bullet["DIRECTION"][1],
-                bullet["DIRECTION"][2],
-                bullet["ID"])
-            self.bullets.append(new_bullet)           
+                    bullet["COLOR"][0],
+                    bullet["COLOR"][1],
+                    bullet["COLOR"][2],
+                    bullet["DIRECTION"][0],
+                    bullet["DIRECTION"][1],
+                    bullet["DIRECTION"][2],
+                    bullet["ROTATION"][0],
+                    bullet["ROTATION"][1],
+                    bullet["ID"])
+                self.bullets[self.id_to_bullet[bullet["ID"]]] = new_bullet
+            else:
+                bullet = self.serverGameState["BULLETS"][bullet_id]
+                new_bullet = Bullet(
+                    bullet["POSITION"][0],
+                    bullet["POSITION"][1],
+                    bullet["POSITION"][2], 
+                    bullet["COLOR"][0],
+                    bullet["COLOR"][1],
+                    bullet["COLOR"][2],
+
+                    bullet["COLOR"][0],
+                    bullet["COLOR"][1],
+                    bullet["COLOR"][2],
+                    bullet["DIRECTION"][0],
+                    bullet["DIRECTION"][1],
+                    bullet["DIRECTION"][2],
+                    bullet["ROTATION"][0],
+                    bullet["ROTATION"][1],
+                    bullet["ID"])
+                self.bullets.append(new_bullet)   
+                self.id_to_bullet[bullet["ID"]] = self.bullets.index(new_bullet)
             
+        # TODO: Remove bullet once player disconnects!!!!!!
+        
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
         # If the Y value of the look() function is changed to not be the same, remember to change the current_pitch value to fit that.
 
-    def MakeBullet(self, x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z):
-        new_bullet = Bullet(x, y ,z, dr, dg, db, sr, sg, sb, direction_x, direction_y, direction_z,self.net.id)
+    def MakeBullet(self, x, y ,z, dr, dg, db, sr, sg, sb, dirx, diry, dirz, pitch, angle):
+        new_bullet = Bullet(x, y ,z, dr, dg, db, sr, sg, sb, dirx, diry, dirz, pitch, angle, self.net.id)
         data = {"BULLET": new_bullet.get_data()}
         data = json.dumps(data)
         reply = self.net.send(data)
@@ -579,7 +621,11 @@ class GraphicsProgram3D:
 
             self.model_matrix.push_matrix()
             self.model_matrix.add_translation(bullet.body.trans_x,bullet.body.trans_y,bullet.body.trans_z)
-            self.model_matrix.add_scale(bullet.body.scale_x,bullet.body.scale_y,bullet.body.scale_z)
+            
+            self.model_matrix.add_rotation_y(math.degrees(-bullet.angle))
+            self.model_matrix.add_rotation_x(math.degrees(bullet.pitch))
+
+            self.model_matrix.add_scale(bullet.body.scale_x,bullet.body.scale_y,bullet.body.scale_z + 200)
             self.shader.set_model_matrix(self.model_matrix.matrix)
 
             bullet.body.draw(self.shader)
