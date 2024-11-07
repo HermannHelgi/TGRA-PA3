@@ -122,7 +122,7 @@ class ViewMatrix:
         self.max_pitch = math.radians(90)
         self.min_pitch = math.radians(-90)
 
-    def slide(self, del_u, del_v, del_n, canFly, arr=[]):
+    def slide(self, del_u, del_v, del_n, isSpec, arr=[]):
         """
         Slides the camera around as specified, also checks for collisions with any entity after movement.
         Collision system is based on AABB. (Axis-Aligned Bounded Box)
@@ -134,20 +134,20 @@ class ViewMatrix:
         new_x = self.eye.x
         new_z = self.eye.z
 
-        for box in arr:
-            if box[0] <= self.eye.x <= box[1] and box[2] <= self.eye.z <= box[3]:
-                hit_x, clamp_x = self.check_hit_and_clamp(old_x, new_x, box[0], box[1])
-                hit_z, clamp_z = self.check_hit_and_clamp(old_z, new_z, box[2], box[3])
-                
-                if hit_x >= 0 or hit_z >= 0:
-                    if hit_x >= 0:
-                        self.eye.x = clamp_x
-                    if hit_z >= 0:
-                        self.eye.z = clamp_z
-
-        if (canFly):
+        if (isSpec):
             self.eye.y += self.u.y * del_u + self.v.y * del_v + self.norm_vector.y * del_n
-        
+        else:  
+            for box in arr:
+                if box[0] <= self.eye.x <= box[1] and box[2] <= self.eye.z <= box[3]:
+                    hit_x, clamp_x = self.check_hit_and_clamp(old_x, new_x, box[0], box[1])
+                    hit_z, clamp_z = self.check_hit_and_clamp(old_z, new_z, box[2], box[3])
+                    
+                    if hit_x >= 0 or hit_z >= 0:
+                        if hit_x >= 0:
+                            self.eye.x = clamp_x
+                        if hit_z >= 0:
+                            self.eye.z = clamp_z
+
     def check_hit_and_clamp(self, old_pos, new_pos, min_bound, max_bound):
         """
         Collision function, checks some local box in what way the player has collided with it.

@@ -45,9 +45,11 @@ class GraphicsProgram3D:
         self.shootTimer = 0
         self.shootCooldown = 1
         self.killDistance = 1
+        self.TotalLives = 5
+        self.currentLives = self.TotalLives
 
         # EDITOR & SPEED VARIABLES # 
-        self.canFly = False
+        self.isSpectator = False
         self.movementSpeed = 3
         self.walkingSpeed = self.movementSpeed
         self.sprintspeed = 6
@@ -75,6 +77,7 @@ class GraphicsProgram3D:
         self.leftWalkKey = K_a
         self.rightWalkKey = K_d
         self.sprintKey = K_LSHIFT
+        self.respawnKey = K_SPACE
 
         self.forwards_key_down = False
         self.left_key_down = False
@@ -126,13 +129,13 @@ class GraphicsProgram3D:
             self.shootTimer -= delta_time
 
         if (self.forwards_key_down):
-            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.canFly, self.boxes)
+            self.view_matrix.slide(0, 0, -self.movementSpeed * delta_time, self.isSpectator, self.boxes)
         if (self.backwards_key_down):
-            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.canFly, self.boxes)
+            self.view_matrix.slide(0, 0, self.movementSpeed * delta_time, self.isSpectator, self.boxes)
         if (self.left_key_down):
-            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            self.view_matrix.slide(-self.movementSpeed * delta_time, 0, 0, self.isSpectator, self.boxes)
         if (self.right_key_down):
-            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.canFly, self.boxes)
+            self.view_matrix.slide(self.movementSpeed * delta_time, 0, 0, self.isSpectator, self.boxes)
         if (self.yawAmount != 0):
             self.view_matrix.rotate_on_floor(-(self.yawAmount * self.mouseSensitivity) * delta_time)
         if (self.pitchAmount != 0):
@@ -153,11 +156,16 @@ class GraphicsProgram3D:
         for elem in self.spinning_spheres:
             self.spheres[elem].rotate_y += 30 * delta_time
         
-        for bullet in self.bullets:
-            if bullet.player_id != self.net.id:
-                distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet.body.trans_x, bullet.body.trans_y, bullet.body.trans_z], [bullet.direction_x, bullet.direction_y, bullet.direction_z])
-                if distance <= self.killDistance:
-                    self.randomize_spawn()
+        if not self.isSpectator:
+            for bullet in self.bullets:
+                if bullet.player_id != self.net.id:
+                    distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet.body.trans_x, bullet.body.trans_y, bullet.body.trans_z], [bullet.direction_x, bullet.direction_y, bullet.direction_z])
+                    if distance <= self.killDistance:
+                        self.currentLives -= 1
+                        if self.currentLives > 0:
+                            self.randomize_spawn()
+                        else:
+                            self.isSpectator = True
 
     def distance_from_point_to_line(self, point, line_point, line_direction):
         P = numpy.array(point)
@@ -210,7 +218,7 @@ class GraphicsProgram3D:
             self.yawAmount = mouseX
             self.pitchAmount = -mouseY
             mouse_buttons = pygame.mouse.get_pressed()
-            if mouse_buttons[0] and self.shootTimer <= 0:
+            if mouse_buttons[0] and self.shootTimer <= 0 and not self.isSpectator:
                 self.ShootBullet()
                 self.shootTimer = self.shootCooldown
 
@@ -234,6 +242,11 @@ class GraphicsProgram3D:
                         self.right_key_down = True
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.sprintspeed
+                    elif event.key == self.respawnKey and self.isSpectator: # Respawn
+                        self.currentLives = self.TotalLives
+                        self.isSpectator = False
+                        self.view_matrix.current_pitch = 0.0
+                        self.randomize_spawn()
 
                 elif event.type == pygame.KEYUP:
 
@@ -315,7 +328,10 @@ class GraphicsProgram3D:
 
     """Lets the server know of our new position and gets the current game state from the server"""
     def updateGameState(self):
-        self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]
+        if self.isSpectator:
+            self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [1,1,1]
+        else:
+            self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]
         data = {}
         data["PLAYER"] = self.serverGameState["PLAYERS"][str(self.net.id)]
         data = json.dumps(data)
@@ -363,9 +379,7 @@ class GraphicsProgram3D:
                     bullet["ID"])
                 self.bullets.append(new_bullet)   
                 self.id_to_bullet[bullet["ID"]] = self.bullets.index(new_bullet)
-            
-        # TODO: Remove bullet once player disconnects!!!!!!
-        
+                    
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
