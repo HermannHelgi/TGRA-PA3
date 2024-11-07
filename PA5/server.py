@@ -4,8 +4,10 @@ import json
 
 s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-server = 'localhost'
-port = 4123
+
+
+server = '0.0.0.0'
+port = int(input("Please provide a port to host on: "))
 
 
 try:
