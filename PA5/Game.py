@@ -172,7 +172,7 @@ class GraphicsProgram3D:
                             self.randomize_spawn()
                         else:
                             self.isSpectator = True
-                            self.MakeBullet(1000,1,1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 0)
+                            self.MakeBullet(1000,1,1000, 0, 0, 0, 0, 0, 0, 1, 1, 1, 90, 1)
 
     def distance_from_point_to_line(self, point, line_point, line_direction):
         P = numpy.array(point)
