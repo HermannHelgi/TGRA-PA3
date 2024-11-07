@@ -172,6 +172,7 @@ class GraphicsProgram3D:
                             self.randomize_spawn()
                         else:
                             self.isSpectator = True
+                            self.MakeBullet(1000,1,1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 0)
 
     def distance_from_point_to_line(self, point, line_point, line_direction):
         P = numpy.array(point)
@@ -219,7 +220,6 @@ class GraphicsProgram3D:
         exiting = False
 
         while not exiting:
-
             #Mouse movement
             mouseX, mouseY = pygame.mouse.get_rel()
             self.yawAmount = mouseX
@@ -269,8 +269,6 @@ class GraphicsProgram3D:
                     elif event.key == self.sprintKey:
                         self.movementSpeed = self.walkingSpeed
                 
-            
-
             self.update()
             self.display()
 
@@ -359,16 +357,14 @@ class GraphicsProgram3D:
     """Lets the server know of our new position and gets the current game state from the server"""
     def updateGameState(self):
         if self.isSpectator:
-            self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [1,1,1]
+            self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [1,3,1]
         else:
             self.serverGameState["PLAYERS"][str(self.net.id)]["POSITION"] = [self.view_matrix.eye.x,self.view_matrix.eye.y,self.view_matrix.eye.z]
         data = {}
         data["PLAYER"] = self.serverGameState["PLAYERS"][str(self.net.id)]
         data = json.dumps(data)
         reply = self.net.send(data)
-        self.serverGameState = json.loads(reply)
-
-            
+        self.serverGameState = json.loads(reply)          
         
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
