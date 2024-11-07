@@ -18,8 +18,12 @@ class GraphicsProgram3D:
     def __init__(self):
         # WINDOW VARIABLES AND INITIALIZATION #
         seed() # For random spawns
-        self.screenWidth = 800
-        self.screenHeight = 600
+        self.screenWidth = 1280
+        self.screenHeight = 780
+        self.text_display_cut_width = self.screenWidth - 125
+        self.text_display_cut_height = self.screenHeight - 125
+        self.text_display_width = 100
+        self.text_display_height = 100
 
         ip = input("Please provide an ip to connect to (leave blank for localhost): ")
         port = int(input("Please provide a port: "))
@@ -211,6 +215,14 @@ class GraphicsProgram3D:
         self.DrawBullets()
         self.DrawPlayers()
 
+        # LIVES
+
+        glEnable(GL_SCISSOR_TEST)
+        self.DrawLives()           
+        self.DrawCrosshair()           
+
+        glDisable(GL_SCISSOR_TEST)
+
         pygame.display.flip()
 
     def program_loop(self):
@@ -275,6 +287,104 @@ class GraphicsProgram3D:
         #OUT OF GAME LOOP
         pygame.quit()
    
+    def DrawCrosshair(self):
+        glScissor((self.screenWidth // 2) - 5,(self.screenHeight // 2) - 35, 10, 30)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+        glScissor((self.screenWidth // 2) - 5,(self.screenHeight // 2) + 5, 10, 30)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+
+        glScissor((self.screenWidth // 2) - 35 ,(self.screenHeight // 2) - 5, 30, 10)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+        glScissor((self.screenWidth // 2) + 5,(self.screenHeight // 2) - 5, 30, 10)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+    def DrawLives(self):
+        if (self.currentLives == 0):
+            glScissor(self.text_display_cut_width,self.text_display_cut_height, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 20, self.text_display_width - 80, self.text_display_height - 40)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height + 20, self.text_display_width - 80, self.text_display_height - 40)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 80, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            
+        elif (self.currentLives == 1):
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height, self.text_display_width - 80, self.text_display_height)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            
+        elif (self.currentLives == 2):
+            glScissor(self.text_display_cut_width,self.text_display_cut_height, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 20, self.text_display_width - 80, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 40, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height + 60, self.text_display_width - 80, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 80, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            
+        elif (self.currentLives == 3):
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height, self.text_display_width - 80, self.text_display_height)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+            glScissor(self.text_display_cut_width,self.text_display_cut_height, self.text_display_width - 20, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 40, self.text_display_width - 20, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 80, self.text_display_width - 20, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            
+        elif (self.currentLives == 4):
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height, self.text_display_width - 80, self.text_display_height)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width + 20,self.text_display_cut_height + 40, self.text_display_width - 40, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 40, self.text_display_width - 80, self.text_display_height - 40)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+        elif (self.currentLives == 5):
+            glScissor(self.text_display_cut_width,self.text_display_cut_height, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width + 80,self.text_display_cut_height + 20, self.text_display_width - 80, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 40, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 60, self.text_display_width - 80, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glScissor(self.text_display_cut_width,self.text_display_cut_height + 80, self.text_display_width, self.text_display_height - 80)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
     def ShootBullet(self):
         playerColors = self.serverGameState["PLAYERS"][str(self.net.id)]["COLOR"] #Make the bullet the same as the players
 
@@ -368,6 +478,8 @@ class GraphicsProgram3D:
         
     def randomize_spawn(self):
         random_spawn = self.spawn_locations[randint(0, (self.spawn_locations.__len__() - 1))]
+        self.view_matrix.current_pitch = 0
+
         self.view_matrix.look(Point(random_spawn[0], 3, random_spawn[1]), Point(random_spawn[2], 3, random_spawn[3]), Vector(0, 1, 0)) 
         # If the Y value of the look() function is changed to not be the same, remember to change the current_pitch value to fit that.
 
