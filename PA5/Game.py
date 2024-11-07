@@ -21,6 +21,11 @@ class GraphicsProgram3D:
         self.screenWidth = 800
         self.screenHeight = 600
 
+        ip = input("Please provide an ip to connect to (leave blank for localhost): ")
+        port = int(input("Please provide a port: "))
+        if (ip == ""):
+            ip = "localhost"
+        
         pygame.init() 
         pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.OPENGL|pygame.DOUBLEBUF)
         pygame.mouse.set_visible(False)
@@ -94,7 +99,8 @@ class GraphicsProgram3D:
         self.light_rotation_array=[]
 
         # Network stuffs
-        self.net = Client()
+        
+        self.net = Client(ip,port)
         self.bullet_id = 0
         self.serverGameState = json.loads(self.addPlayerToServer())
 
