@@ -29,8 +29,8 @@ Once the server is running, it should allow any player on the LAN to join.
 We cannot promise that a host can join from a separate network as we have not tested it. 
 Such a connection might require port forwarding on the hosts side.
 
-IMPORTANT NOTE: Due to the multithreading required, the server cannot be closed without force. 
-Killing the terminal for the server will shut it down, but it will remain if not forcibly closed.
+IMPORTANT NOTE: Due to the multithreading used, the server cannot be closed without force. 
+Killing the terminal for the server will shut it down, but it will remain running if not forcibly closed.
 
 Running the Game.py file will initiate a client. On start, the user will be prompted for the IP address of the host,
 as well as their port number. If the server is on the same device as the client, entering nothing into the IP address
@@ -62,4 +62,5 @@ A player can respawn with the given button:
     Spacebar to respawn.
 
 The camera of the player can dictate how fast the player moves. 
-If looked directly down/up the player will become frozen in place.
+Note due to the way the camera controls are implemented then during spectator mode, 
+if the player looks directly up or down during play the player will become frozen in place.
