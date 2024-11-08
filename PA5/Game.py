@@ -169,7 +169,8 @@ class GraphicsProgram3D:
         if not self.isSpectator:
             for bullet_id,bullet_data in self.serverGameState["BULLETS"].items():
                 if bullet_id != self.net.id:
-                    distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet_data["POSITION"][0],bullet_data["POSITION"][1],bullet_data["POSITION"][2]], [bullet_data["DIRECTION"][0],bullet_data["DIRECTION"][1],bullet_data["DIRECTION"][2]])
+                    distance = self.distance_from_point_to_line([self.view_matrix.eye.x, self.view_matrix.eye.y, self.view_matrix.eye.z], [bullet_data["POSITION"][0],bullet_data["POSITION"][1],bullet_data["POSITION"][2]], [bullet_data["DIRECTION"][0],bullet_data["DIRECTION"][1],bullet_data["DIRECTION"][2]], [0.8, 2.8, 0.8])
+                    print(distance)
                     if distance <= self.killDistance:
                         self.currentLives -= 1
                         if self.currentLives > 0:
@@ -178,15 +179,25 @@ class GraphicsProgram3D:
                             self.isSpectator = True
                             self.MakeBullet(1000,1,1000, 0, 0, 0, 0, 0, 0, 1, 1, 1, 90, 1)
 
-    def distance_from_point_to_line(self, point, line_point, line_direction):
+    def distance_from_point_to_line(self, point, line_point, line_direction, radii):
         P = numpy.array(point)
         A = numpy.array(line_point)
         d = numpy.array(line_direction)
         
-        AP = P - A
+        # Normalize the player's position based on the radii of the ellipsoid
+        r_x, r_y, r_z = radii
+        scale_matrix = numpy.array([1.0 / r_x, 1.0 / r_y, 1.0 / r_z])
         
-        cross_product = numpy.cross(AP, d)
-        distance = numpy.linalg.norm(cross_product) / numpy.linalg.norm(d)
+        # Scale the point and line to an isotropic space where the player is a sphere
+        P_scaled = P * scale_matrix
+        A_scaled = A * scale_matrix
+        d_scaled = d * scale_matrix
+        
+        AP_scaled = P_scaled - A_scaled
+        cross_product = numpy.cross(AP_scaled, d_scaled)
+        
+        # Compute the distance as usual in the scaled space
+        distance = numpy.linalg.norm(cross_product) / numpy.linalg.norm(d_scaled)
         
         return distance
 
