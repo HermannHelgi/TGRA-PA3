@@ -6,7 +6,7 @@ s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
 
 
-server = '0.0.0.0'
+server = 'localhost'
 port = int(input("Please provide a port to host on: "))
 
 
@@ -45,7 +45,7 @@ def threaded_client(conn,addr):
     reply = ''
     while True:
         try:
-            data = conn.recv(5000)
+            data = conn.recv(50000)
             reply = data.decode('utf-8')
             if not data:
                 conn.send(str.encode("Goodbye"))
